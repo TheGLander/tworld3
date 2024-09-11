@@ -134,8 +134,7 @@ enum {
   DIRECTION_SOUTH = 8,
 };
 typedef uint8_t Direction;
-// TODO: Spin off the `inline`s into a separate generic logic file, and just let
-// the compiler itself decide when to inline
+
 uint8_t Direction_to_idx(Direction dir);
 Direction Direction_from_idx(uint8_t idx);
 Direction Direction_left(Direction dir);

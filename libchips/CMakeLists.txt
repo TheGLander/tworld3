@@ -4,8 +4,9 @@ project(libchips LANGUAGES C)
 
 set(libchips_src)
 list(APPEND libchips_src
-  src/logic-lynx.c
   src/logic-generic.c
+  src/logic-lynx.c
+  src/logic-ms.c
   src/random.c
 )
 

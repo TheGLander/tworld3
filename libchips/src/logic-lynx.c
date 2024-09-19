@@ -23,10 +23,10 @@ enum CollisionCheckFlags {
   CMM_PUSHBLOCKSNOW = 0x0010,
 };
 
-static inline TileID Level_get_terrain(const Level* self, Position pos) {
+static inline TileID Level_cell_get_top_terrain(const Level* self, Position pos) {
   return self->map[pos].top.id;
 }
-static inline void Level_set_terrain(Level* self, Position pos, TileID tile) {
+static inline void Level_cell_set_top_terrain(Level* self, Position pos, TileID tile) {
   self->map[pos].top.id = tile;
 }
 
@@ -119,7 +119,7 @@ static void Level_stop_terrain_sfx(Level* level) {
 
 static bool lynx_init_level(Level* self) {
   Actor* actors = calloc(MAX_CREATURES + 1, sizeof(Actor));
-  assert(self->actors != NULL);
+  assert(actors != NULL);
   // TODO: Do we actually need to skip the first actor?
   actors += 1;
   self->actors = actors;
@@ -222,7 +222,7 @@ static bool lynx_init_level(Level* self) {
       .pedantic_mode = self->lx_state.pedantic_mode,
       .chip_stuck = self->lx_state.pedantic_mode &&
                     chip->pos != POSITION_NULL &&
-                    TileID_is_ice(Level_get_terrain(self, chip->pos)),
+                    TileID_is_ice(Level_cell_get_top_terrain(self, chip->pos)),
       .chip_predicted_pos = POSITION_NULL,
   };
 
@@ -384,7 +384,7 @@ static bool Level_player_has_item(const Level* level, TileID id) {
 static Direction Actor_calculate_forced_move(Actor* self, Level* level) {
   if (level->current_tick == 0)
     return DIRECTION_NIL;
-  TileID terrain = Level_get_terrain(level, self->pos);
+  TileID terrain = Level_cell_get_top_terrain(level, self->pos);
   if (TileID_is_ice(terrain)) {
     if (self->id == Chip &&
         (Level_player_has_item(level, Boots_Ice) || level->lx_state.chip_stuck))
@@ -529,7 +529,7 @@ static bool Actor_check_collision(const Actor* self,
   if (self->move_cooldown)
     return false;
   // Exit collision check
-  TileID this_terrain = Level_get_terrain(level, self->pos);
+  TileID this_terrain = Level_cell_get_top_terrain(level, self->pos);
   Direction exit_dirs_blocked =
       TileID_get_exit_impeding_directions(this_terrain);
   if (exit_dirs_blocked & dir)
@@ -560,7 +560,7 @@ static bool Actor_check_collision(const Actor* self,
   }
   Position target_pos = x + y * MAP_WIDTH;
   // Check terrain
-  TileID new_terrain = Level_get_terrain(level, target_pos);
+  TileID new_terrain = Level_cell_get_top_terrain(level, target_pos);
   if (new_terrain == SwitchWall_Closed || new_terrain == SwitchWall_Open) {
     new_terrain ^= level->lx_state.toggle_walls_xor;
   }
@@ -615,7 +615,7 @@ static TriRes Actor_start_moving_to(Actor* self, Level* level, bool releasing) {
   assert(!Direction_is_diagonal(move_dir));
   self->direction = move_dir;
 
-  TileID from_terrain = Level_get_terrain(level, self->pos);
+  TileID from_terrain = Level_cell_get_top_terrain(level, self->pos);
 
   if (self->id == Chip && !Level_player_has_item(level, Boots_Slide)) {
     if (TileID_is_slide(from_terrain) && self->move_decision == DIRECTION_NIL) {
@@ -724,7 +724,7 @@ static TriRes Actor_reduce_cooldown(Actor* self, const Level* level) {
   if (self->id == Blob) {
     speed /= 2;
   }
-  TileID terrain = Level_get_terrain(level, self->pos);
+  TileID terrain = Level_cell_get_top_terrain(level, self->pos);
   if (TileID_is_slide(terrain) &&
       !(self->id == Chip && Level_player_has_item(level, Boots_Slide))) {
     speed *= 2;
@@ -780,7 +780,7 @@ static bool Actor_can_be_pushed(Actor* self,
                                 Direction dir,
                                 uint8_t flags) {
   assert(self && self->id == Block);
-  assert(Level_get_terrain(level, self->pos) != CloneMachine);
+  assert(Level_cell_get_top_terrain(level, self->pos) != CloneMachine);
   assert(dir != DIRECTION_NIL);
   if (!Actor_check_collision(self, level, dir, flags)) {
     if (!Actor_is_moving(self) &&
@@ -907,7 +907,7 @@ static void Chip_do_decision(Actor* self, Level* level) {
     can_move = false;
 
   // Can we override the current forced move?
-  TileID terrain = Level_get_terrain(level, self->pos);
+  TileID terrain = Level_cell_get_top_terrain(level, self->pos);
   bool can_override = TileID_is_slide(terrain) && (self->state & CS_SLIDETOKEN);
   Direction forced_move = Actor_get_forced_move(self);
   if (forced_move != DIRECTION_NIL && !can_override)
@@ -976,7 +976,7 @@ static void Actor_do_decision(Actor* self, Level* level) {
   if (forced_move)
     return;
 
-  TileID terrain = Level_get_terrain(level, self->pos);
+  TileID terrain = Level_cell_get_top_terrain(level, self->pos);
   if (terrain == CloneMachine || terrain == Beartrap) {
     self->move_decision = self->direction;
     return;
@@ -1003,7 +1003,7 @@ static Position Level_find_connected_cell(const Level* self,
   if (self->lx_state.pedantic_mode) {
     for (uint16_t offset = 1; offset < MAP_WIDTH * MAP_HEIGHT; offset += 1) {
       Position searched_pos = (from_pos + offset) % (MAP_WIDTH * MAP_HEIGHT);
-      TileID terrain = Level_get_terrain(self, searched_pos);
+      TileID terrain = Level_cell_get_top_terrain(self, searched_pos);
       if (terrain == target_id) {
         return searched_pos;
       }
@@ -1021,7 +1021,7 @@ static Position Level_find_connected_cell(const Level* self,
 
 static void Level_activate_trap(Level* self, Position pos) {
   assert(pos != POSITION_NULL);
-  if (Level_get_terrain(self, pos) != Beartrap) {
+  if (Level_cell_get_top_terrain(self, pos) != Beartrap) {
     assert(false && "Can't activate a cell with no trap!");
     return;
   }
@@ -1043,7 +1043,7 @@ static void Actor_teleport(Actor* self, Level* level) {
       checked_pos = MAP_WIDTH * MAP_HEIGHT;
     }
     checked_pos -= 1;
-    TileID terrain = Level_get_terrain(level, checked_pos);
+    TileID terrain = Level_cell_get_top_terrain(level, checked_pos);
     if (terrain == Teleport) {
       // NOTE: Intentional bug: if a non-Chip actor fails a teleport check due
       // to that cell already being occupied by an actor, the occupier's claim
@@ -1057,7 +1057,7 @@ static void Actor_teleport(Actor* self, Level* level) {
     } else if (Level_cell_ever_had_teleport(level, checked_pos)) {
       // Pedantic Lynx only: if there was a teleport on this cell, but due to a
       // monster standing on a recessed wall, it was overwritten
-      Level_set_terrain(level, checked_pos, Teleport);
+      Level_cell_set_top_terrain(level, checked_pos, Teleport);
       if (checked_pos == chip->pos) {
         chip->hidden = true;
       }
@@ -1127,7 +1127,7 @@ static void lynx_tick_level(Level* self) {
       continue;
     actor->move_decision = DIRECTION_NIL;
     Actor_set_forced_move(actor, DIRECTION_NIL);
-    TileID terrain = Level_get_terrain(self, actor->pos);
+    TileID terrain = Level_cell_get_top_terrain(self, actor->pos);
     // In pedantic Lynx, the last actor on a popup wall decides which popup wall
     // is actually, well, popped
     if (actor != chip && self->lx_state.pedantic_mode && terrain == PopupWall) {
@@ -1147,7 +1147,7 @@ static void lynx_tick_level(Level* self) {
        actor -= 1) {
     if (actor->hidden || Actor_is_moving(actor))
       continue;
-    TileID terrain = Level_get_terrain(self, actor->pos);
+    TileID terrain = Level_cell_get_top_terrain(self, actor->pos);
     if (terrain != Teleport)
       continue;
     Actor_teleport(actor, self);

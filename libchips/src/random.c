@@ -41,7 +41,7 @@ uint8_t Prng_random3(Prng* self) {
 uint8_t Prng_random4(Prng* self) {
   return Prng_random(self) >> 29;
 }
-void Prng_permute3(Prng* self, int64_t arr[3]) {
+void Prng_permute3(Prng* self, int64_t arr[3]) { //todo: swap these out to void pointers and take in size
   int64_t temp;
   uint64_t val = Prng_random(self);
   // Swap array index 1 with either 0 or 1

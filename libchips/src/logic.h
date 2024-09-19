@@ -115,6 +115,7 @@ typedef enum TileID {
   Entity_Explosion = 0x7E,
   Animation_Reserved1 = 0x7F
 } TileID;
+
 bool TileID_is_slide(TileID id);
 bool TileID_is_ice(TileID id);
 bool TileID_is_door(TileID id);
@@ -124,6 +125,7 @@ bool TileID_is_ms_special(TileID id);
 bool TileID_is_terrain(TileID id);
 bool TileID_is_actor(TileID id);
 bool TileID_is_animation(TileID id);
+
 typedef int16_t Position;
 enum { POSITION_NULL = -1 };
 enum {
@@ -172,6 +174,7 @@ typedef struct TileConn {
   Position from;
   Position to;
 } TileConn;
+
 typedef struct ConnList {
   uint8_t length;
   TileConn items[256];
@@ -200,7 +203,16 @@ enum {
 };
 typedef uint8_t ChipStatus;
 
+typedef struct MsSlipper {
+  Actor* actor;
+  int dir;
+} MsSlipper;
+
 typedef struct MsState {
+  uint32_t creature_count;
+  uint32_t slip_count;
+  MsSlipper* slip_list;
+  uint32_t mscc_slippers;
   uint8_t chip_ticks_since_moved;
   ChipStatus chip_status;
   Direction chip_last_slip_dir;
@@ -264,6 +276,7 @@ typedef struct Level {
     LxState lx_state;
   };
 } Level;
+
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,
   SND_CHIP_WINS = 1,

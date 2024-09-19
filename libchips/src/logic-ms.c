@@ -180,6 +180,22 @@ static inline bool Level_cell_clear_mutant(Level* self, Position pos) {
     return self->map[pos].bottom.state &= ~FS_HASMUTANT;
 }
 
+static inline Position Level_get_mouse_goal(Level const* self) {
+    return self->ms_state.mouse_goal;
+}
+
+static inline Position Level_has_mouse_goal(Level const* self) {
+    return self->ms_state.mouse_goal >= 0;
+}
+
+static inline void Level_set_mouse_goal(Level* self, Position goal) {
+    self->ms_state.mouse_goal = goal;
+}
+
+static inline void Level_cancel_mouse_goal(Level* self) {
+    self->ms_state.mouse_goal = -1;
+}
+
 /* The list of "active" blocks.
  */
 static creature** blocks = NULL;
@@ -1170,25 +1186,24 @@ static void choosecreaturemove(Level* level, Actor* cr) {
 
 /* Select a direction for Chip to move towards the goal position.
  */
-static int chipmovetogoalpos(void) {
-    creature* cr;
-    int dir, d1, d2;
-    int x, y;
+static Direction chipmovetogoalpos(Level* level) {
+    Direction dir, d1, d2;
+    Position x, y;
 
     if (!hasgoal())
-        return NIL;
-    cr = getchip();
-    if (goalpos() == cr->pos) {
+        return DIRECTION_NIL;
+    Actor* chip = Level_get_chip(level);
+    if (goalpos() == chip->pos) {
         cancelgoal();
-        return NIL;
+        return DIRECTION_NIL;
     }
 
-    y = goalpos() / MAP_WIDTH - cr->pos / MAP_WIDTH;
-    x = goalpos() % MAP_WIDTH - cr->pos % MAP_WIDTH;
-    d1 = y < 0 ? NORTH : y > 0 ? SOUTH : NIL;
+    y = goalpos() / MAP_WIDTH - chip->pos / MAP_WIDTH;
+    x = goalpos() % MAP_WIDTH - chip->pos % MAP_WIDTH;
+    d1 = y < 0 ? DIRECTION_NORTH : y > 0 ? DIRECTION_SOUTH : DIRECTION_NIL;
     if (y < 0)
         y = -y;
-    d2 = x < 0 ? WEST : x > 0 ? EAST : NIL;
+    d2 = x < 0 ? DIRECTION_WEST : x > 0 ? DIRECTION_EAST : DIRECTION_NIL;
     if (x < 0)
         x = -x;
     if (x > y) {
@@ -1196,10 +1211,10 @@ static int chipmovetogoalpos(void) {
         d1 = d2;
         d2 = dir;
     }
-    if (d1 != NIL && d2 != NIL)
-        dir = canmakemove(cr, d1, 0) ? d1 : d2;
+    if (d1 != DIRECTION_NIL && d2 != DIRECTION_NIL)
+        dir = canmakemove(chip, d1, 0) ? d1 : d2;
     else
-        dir = d2 == NIL ? d1 : d2;
+        dir = d2 == DIRECTION_NIL ? d1 : d2;
 
     return dir;
 }
@@ -1230,9 +1245,7 @@ static int makemouseabsolute(int relpos) {
  * then Chip is not currently permitted to select a direction of
  * movement, and the player's input should not be retained.
  */
-static void choosechipmove(Level* level, Actor* cr, int discard) {
-    Direction dir;
-
+static void choosechipmove(Level* level, Actor* cr, bool discard) {
     cr->move_decision = DIRECTION_NIL;
 
     if (cr->hidden)
@@ -1241,39 +1254,35 @@ static void choosechipmove(Level* level, Actor* cr, int discard) {
     if (!(level->current_tick & 3))
         cr->state &= ~CS_HASMOVED;
     if (cr->state & CS_HASMOVED) {
-        if (currentinput() != DIRECTION_NIL && hasgoal()) { //todo: come back to mouse stuff later
-            cancelgoal();
-            lastmove() = CmdMoveNop;
+        if (level->game_input != DIRECTION_NIL && Level_has_mouse_goal(level)) {
+            Level_cancel_mouse_goal(level);
         }
         return;
     }
 
-    dir = currentinput();
-    currentinput() = NIL;
-    if (discard || ((cr->state & CS_SLIDE) && dir == cr->dir)) {
+    GameInput input = level->game_input;
+    level->game_input = DIRECTION_NIL; //todo: is this valid anymore???
+    if (discard || ((cr->state & CS_SLIDE) && input == cr->direction)) {
         if (level->current_tick && !(level->current_tick & 1))
-            cancelgoal();
+            Level_cancel_mouse_goal(level);
         return;
     }
 
-    if (dir >= CmdAbsMouseMoveFirst && dir <= CmdAbsMouseMoveLast) {
-        goalpos() = dir - CmdAbsMouseMoveFirst;
-        lastmove() = CmdMouseMoveFirst + makemouserelative(goalpos());
-        dir = NIL;
-    } else if (dir >= CmdMouseMoveFirst && dir <= CmdMouseMoveLast) {
-        lastmove() = dir;
-        goalpos() = makemouseabsolute(dir - CmdMouseMoveFirst);
-        dir = NIL;
+    if (input >= CmdAbsMouseMoveFirst && input <= CmdAbsMouseMoveLast) {
+        goalpos() = input - CmdAbsMouseMoveFirst; //todo: come back to mouse stuff later
+        input = DIRECTION_NIL;
+    } else if (input >= CmdMouseMoveFirst && input <= CmdMouseMoveLast) {
+        goalpos() = makemouseabsolute(input - CmdMouseMoveFirst);
+        input = DIRECTION_NIL;
     } else {
-        if ((dir & (NORTH | SOUTH)) && (dir & (EAST | WEST)))
-            dir &= NORTH | SOUTH;
-        lastmove() = dir;
+        if ((input & (DIRECTION_NORTH | DIRECTION_SOUTH)) && (input & (DIRECTION_EAST | DIRECTION_WEST)))
+            input &= DIRECTION_NORTH | DIRECTION_SOUTH;
     }
 
-    if (dir == DIRECTION_NIL && hasgoal() && (level->current_tick & 3) == 2)
-        dir = chipmovetogoalpos();
+    if (input == DIRECTION_NIL && Level_cancel_mouse_goal(level) && (level->current_tick & 3) == 2)
+        input = chipmovetogoalpos(level);
 
-    cr->move_decision = dir;
+    cr->move_decision = input;
 }
 
 /* Teleport the given creature instantaneously from the teleport tile

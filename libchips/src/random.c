@@ -1,4 +1,6 @@
 #include "random.h"
+
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <time.h>
@@ -48,6 +50,7 @@ uint8_t Prng_random4(Prng* self) {
 
 void Prng_permute3(Prng* self, void* arr, size_t const size) {
   unsigned char* arr_c = arr;
+  assert(size <= 32);
   unsigned char temp[32] = {0}; //Note: this means that this func only works with value sizes up to 32 (which is total overkill)
   uint64_t val = Prng_random(self);
   // Swap array index 1 with either 0 or 1
@@ -66,6 +69,7 @@ void Prng_permute4(Prng* self, void* arr, size_t const size) {
   // NOTE: This uses different bit extraction than `permute3` or the `random*`
   // calls to not reuse the same bits.
   unsigned char* arr_c = arr;
+  assert(size <= 32);
   unsigned char temp[32] = {0}; //Note: this means that this func only works with value sizes up to 32 (which is total overkill)
   uint64_t val = Prng_random(self);
   // Swap array index 1 with either 0 or 1

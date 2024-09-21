@@ -335,50 +335,6 @@ static Direction Ice_get_turned_dir(TileID self, Direction dir) {
   return dir;
 }
 
-static uint8_t* Level_player_item_ptr(Level* level, TileID id) {
-  switch (id) {
-    case Key_Red:
-    case Door_Red:
-      return &level->player_keys[0];
-    case Key_Blue:
-    case Door_Blue:
-      return &level->player_keys[1];
-    case Key_Yellow:
-    case Door_Yellow:
-      return &level->player_keys[2];
-    case Key_Green:
-    case Door_Green:
-      return &level->player_keys[3];
-    case Boots_Ice:
-    case Ice:
-    case IceWall_Northwest:
-    case IceWall_Northeast:
-    case IceWall_Southwest:
-    case IceWall_Southeast:
-      return &level->player_boots[0];
-    case Boots_Slide:
-    case Slide_North:
-    case Slide_West:
-    case Slide_South:
-    case Slide_East:
-    case Slide_Random:
-      return &level->player_boots[1];
-    case Boots_Fire:
-    case Fire:
-      return &level->player_boots[2];
-    case Boots_Water:
-    case Water:
-      return &level->player_boots[3];
-    default:
-      return NULL;
-  }
-}
-static bool Level_player_has_item(const Level* level, TileID id) {
-  // const-discarding pointer cast: it's okay, we don't ever write to the return
-  // pointer, which is the only reason why this function isn't const-pointer'd
-  return *Level_player_item_ptr((Level*)level, id) > 0;
-}
-
 static Direction Actor_calculate_forced_move(Actor* self, Level* level) {
   if (level->current_tick == 0)
     return DIRECTION_NIL;

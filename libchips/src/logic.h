@@ -231,7 +231,7 @@ typedef struct MsSlipper {
 typedef struct MsState {
   uint32_t actor_count;
   uint32_t slip_count;
-  MsSlipper* slip_list[MAX_CREATURES];
+  MsSlipper slip_list[MAX_CREATURES];
   uint32_t block_list_count;
   Actor* block_list[MAX_CREATURES];
   uint32_t mscc_slippers;
@@ -314,6 +314,8 @@ TileID Level_get_top_terrain(const Level* self, Position pos);
 TileID Level_get_bottom_terrain(const Level* self, Position pos);
 Actor* Level_get_actors_ptr(const Level* self);
 Actor* Level_get_actor_by_idx(const Level* self, uint32_t idx);
+uint8_t* Level_player_item_ptr(Level* level, TileID id);
+bool Level_player_has_item(const Level* level, TileID id);
 
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,
@@ -360,5 +362,6 @@ enum StateFlags {
 };
 
 extern const Ruleset lynx_logic;
+extern const Ruleset ms_logic;
 
 #endif //LIB_CHIPS_LOGIC_H

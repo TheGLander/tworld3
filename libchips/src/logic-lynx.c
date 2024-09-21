@@ -120,6 +120,7 @@ static void Level_stop_terrain_sfx(Level* level) {
 
 static bool lynx_init_level(Level* self) {
   Actor* actors = xcalloc(MAX_CREATURES + 1, sizeof(Actor));
+  self->actors = actors;
   assert(self->actors != NULL);
   // TODO: Do we actually need to skip the first actor?
   actors += 1;

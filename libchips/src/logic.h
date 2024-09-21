@@ -284,6 +284,7 @@ Prng* Level_get_prng_ptr(Level* self);
 TileID Level_get_top_terrain(const Level* self, Position pos);
 TileID Level_get_bottom_terrain(const Level* self, Position pos);
 Actor* Level_get_actors_ptr(const Level* self);
+Actor* Level_get_actor_by_idx(const Level* self, uint32_t idx);
 
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,

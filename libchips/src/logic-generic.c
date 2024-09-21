@@ -136,6 +136,9 @@ TileID Level_get_bottom_terrain(const Level* self, Position pos) {
 Actor* Level_get_actors_ptr(const Level* self) {
   return self->actors;
 };
+Actor* Level_get_actor_by_idx(const Level* self, uint32_t idx) {
+  return &self->actors[idx];
+};
 void Level_free(Level* self) {
   self->ruleset->uninit_level(self);
   free(self);

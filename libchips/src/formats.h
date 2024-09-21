@@ -29,6 +29,11 @@ const char* LevelMetadata_get_password(const LevelMetadata* self);
 const char* LevelMetadata_get_hint(const LevelMetadata* self);
 const char* LevelMetadata_get_author(const LevelMetadata* self);
 
+typedef Level* LevelPtr;
+DEFINE_RESULT(LevelPtr);
+Result_LevelPtr LevelMetadata_make_level(const LevelMetadata* self,
+                                         const Ruleset* ruleset);
+
 typedef struct LevelSet {
   uint16_t levels_n;
   LevelMetadata levels[];

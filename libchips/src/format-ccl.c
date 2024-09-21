@@ -8,6 +8,7 @@
 #define west(id) ((id) | 1)
 #define east(id) ((id) | 2)
 #define south(id) ((id) | 3)
+
 const char* LevelMetadata_get_title(const LevelMetadata* self) {
   return self->title;
 };
@@ -231,3 +232,81 @@ void LevelSet_free(LevelSet* self) {
   free(self);
 }
 
+static bool uncompress_field(uint8_t* to,
+                             const uint8_t* from,
+                             size_t from_size) {
+  size_t from_idx = 0;
+  size_t to_idx = 0;
+  const size_t to_size = MAP_WIDTH * MAP_HEIGHT;
+  while (to_idx != to_size) {
+    if (from_size - from_idx < 1)
+      return false;
+    if (from[from_idx] != 0xFF) {
+      to[to_idx] = from[from_idx];
+      to_idx += 1;
+      from_idx += 1;
+    } else {
+      if (from_size - from_idx < 3)
+        return false;
+      size_t rle_count = from[from_idx + 1];
+      if (rle_count > to_size - to_idx)
+        return false;
+      uint8_t rle_val = from[from_idx + 2];
+      memset(to + to_idx, rle_val, rle_count);
+      to_idx += rle_count;
+      from_idx += 3;
+    }
+  }
+  if (from_idx != from_size)
+    return false;
+  return true;
+}
+
+Result_LevelPtr LevelMetadata_make_level(const LevelMetadata* self,
+                                         const Ruleset* ruleset) {
+  Level* level = xmalloc(sizeof(Level));
+  *level = (Level){.ruleset = ruleset,
+                   .chips_left = self->chips_required,
+                   .time_limit = self->time_limit * 20};
+  if (self->trap_links) {
+    level->trap_connections = *self->trap_links;
+  }
+  if (self->cloner_links) {
+    level->cloner_connections = *self->cloner_links;
+  }
+  if (self->monster_list) {
+    memcpy(level->ms_state.init_actor_list, self->monster_list,
+           256 * sizeof(Position));
+  }
+  uint8_t uncompressed_field[MAP_WIDTH * MAP_HEIGHT];
+  if (!uncompress_field(uncompressed_field, self->layer_top,
+                        self->layer_top_size)) {
+    free(level);
+    return res_err(LevelPtr, "Failed to uncompress top field");
+  }
+  for (Position pos = 0; pos < MAP_WIDTH * MAP_HEIGHT; pos += 1) {
+    uint8_t ccl_tile_id = uncompressed_field[pos];
+    if (ccl_tile_id >= lengthof(dat_tileid_map)) {
+      free(level);
+      return res_err(LevelPtr, "Unknown CCL tile id %02X", ccl_tile_id);
+    }
+    level->map[pos].top.id = dat_tileid_map[ccl_tile_id];
+  }
+  if (!uncompress_field(uncompressed_field, self->layer_bottom,
+                        self->layer_bottom_size)) {
+    free(level);
+    return res_err(LevelPtr, "Failed to uncompress bottom field");
+  }
+  for (Position pos = 0; pos < MAP_WIDTH * MAP_HEIGHT; pos += 1) {
+    uint8_t ccl_tile_id = uncompressed_field[pos];
+    if (ccl_tile_id >= lengthof(dat_tileid_map)) {
+      free(level);
+      return res_err(LevelPtr, "Unknown CCL tile id %02X", ccl_tile_id);
+    }
+    level->map[pos].bottom.id = dat_tileid_map[ccl_tile_id];
+  }
+
+  level->ruleset = ruleset;
+  bool init_success = ruleset->init_level(level);
+  return res_val(LevelPtr, level);
+}

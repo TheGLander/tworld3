@@ -44,13 +44,13 @@ Direction Direction_right(Direction dir) {
   return ((dir << 3) | ((dir) >> 1)) & 15;
 }
 
-TileID TileID_with_dir(TileID id, Direction dir) {
+TileID TileID_actor_with_dir(TileID id, Direction dir) {
   return id | Direction_to_idx(dir);
 }
-Direction TileID_get_dir(TileID id) {
+Direction TileID_actor_get_dir(TileID id) {
   return Direction_from_idx(id & 3);
 }
-Direction TileID_get_id(TileID id) {
+Direction TileID_actor_get_id(TileID id) {
   return id & ~3;
 }
 
@@ -142,6 +142,49 @@ Actor* Level_get_actors_ptr(const Level* self) {
 Actor* Level_get_actor_by_idx(const Level* self, uint32_t idx) {
   return &self->actors[idx];
 };
+uint8_t* Level_player_item_ptr(Level* level, TileID id) {
+  switch (id) {
+    case Key_Red:
+    case Door_Red:
+      return &level->player_keys[0];
+    case Key_Blue:
+    case Door_Blue:
+      return &level->player_keys[1];
+    case Key_Yellow:
+    case Door_Yellow:
+      return &level->player_keys[2];
+    case Key_Green:
+    case Door_Green:
+      return &level->player_keys[3];
+    case Boots_Ice:
+    case Ice:
+    case IceWall_Northwest:
+    case IceWall_Northeast:
+    case IceWall_Southwest:
+    case IceWall_Southeast:
+      return &level->player_boots[0];
+    case Boots_Slide:
+    case Slide_North:
+    case Slide_West:
+    case Slide_South:
+    case Slide_East:
+    case Slide_Random:
+      return &level->player_boots[1];
+    case Boots_Fire:
+    case Fire:
+      return &level->player_boots[2];
+    case Boots_Water:
+    case Water:
+      return &level->player_boots[3];
+    default:
+      return NULL;
+  }
+}
+bool Level_player_has_item(const Level* level, TileID id) {
+  // const-discarding pointer cast: it's okay, we don't ever write to the return
+  // pointer, which is the only reason why this function isn't const-pointer'd
+  return *Level_player_item_ptr((Level*)level, id) > 0;
+}
 void Level_free(Level* self) {
   self->ruleset->uninit_level(self);
   free(self);

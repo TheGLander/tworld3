@@ -4,8 +4,6 @@
 #include "logic.h"
 #include "misc.h"
 
-#define MAX_CREATURES (2 * MAP_WIDTH * MAP_HEIGHT)
-
 #define PEDANTIC_MAX_CREATURES 128
 
 enum ActorState {
@@ -120,8 +118,6 @@ static void Level_stop_terrain_sfx(Level* level) {
 
 static bool lynx_init_level(Level* self) {
   Actor* actors = xcalloc(MAX_CREATURES + 1, sizeof(Actor));
-  self->actors = actors;
-  assert(self->actors != NULL);
   // TODO: Do we actually need to skip the first actor?
   actors += 1;
   self->actors = actors;
@@ -134,10 +130,10 @@ static bool lynx_init_level(Level* self) {
     MapCell* cell = &self->map[pos];
     // Convert MS tiles into Lynx-comptabile subtitutes
     if (cell->top.id == Block_Static) {
-      cell->top.id = TileID_with_dir(Block_Static, DIRECTION_NORTH);
+      cell->top.id = TileID_actor_with_dir(Block_Static, DIRECTION_NORTH);
     }
     if (cell->bottom.id == Block_Static) {
-      cell->bottom.id = TileID_with_dir(Block_Static, DIRECTION_NORTH);
+      cell->bottom.id = TileID_actor_with_dir(Block_Static, DIRECTION_NORTH);
     }
     if (TileID_is_ms_special(cell->top.id)) {
       cell->top.id = Wall;
@@ -163,8 +159,8 @@ static bool lynx_init_level(Level* self) {
       Actor* actor = &actors[actors_n];
       actors_n += 1;
       actor->pos = pos;
-      actor->id = TileID_get_id(cell->top.id);
-      actor->direction = TileID_get_dir(cell->top.id);
+      actor->id = TileID_actor_get_id(cell->top.id);
+      actor->direction = TileID_actor_get_dir(cell->top.id);
       if (self->lx_state.pedantic_mode && actor->id == Block &&
           TileID_is_ice(cell->bottom.id)) {
         actor->direction = DIRECTION_NIL;
@@ -337,50 +333,6 @@ static Direction Ice_get_turned_dir(TileID self, Direction dir) {
   if (dir == horiz_dir)
     return Direction_back(vert_dir);
   return dir;
-}
-
-static uint8_t* Level_player_item_ptr(Level* level, TileID id) {
-  switch (id) {
-    case Key_Red:
-    case Door_Red:
-      return &level->player_keys[0];
-    case Key_Blue:
-    case Door_Blue:
-      return &level->player_keys[1];
-    case Key_Yellow:
-    case Door_Yellow:
-      return &level->player_keys[2];
-    case Key_Green:
-    case Door_Green:
-      return &level->player_keys[3];
-    case Boots_Ice:
-    case Ice:
-    case IceWall_Northwest:
-    case IceWall_Northeast:
-    case IceWall_Southwest:
-    case IceWall_Southeast:
-      return &level->player_boots[0];
-    case Boots_Slide:
-    case Slide_North:
-    case Slide_West:
-    case Slide_South:
-    case Slide_East:
-    case Slide_Random:
-      return &level->player_boots[1];
-    case Boots_Fire:
-    case Fire:
-      return &level->player_boots[2];
-    case Boots_Water:
-    case Water:
-      return &level->player_boots[3];
-    default:
-      return NULL;
-  }
-}
-static bool Level_player_has_item(const Level* level, TileID id) {
-  // const-discarding pointer cast: it's okay, we don't ever write to the return
-  // pointer, which is the only reason why this function isn't const-pointer'd
-  return *Level_player_item_ptr((Level*)level, id) > 0;
 }
 
 static Direction Actor_calculate_forced_move(Actor* self, Level* level) {

@@ -1,3 +1,6 @@
+#ifndef MISC_H
+#define MISC_H
+
 #include <stddef.h>
 
 #define DEFINE_RESULT(type)      \
@@ -21,7 +24,7 @@
 #if defined(__has_attribute) && __has_attribute(__alloc_size__)
 #define attr_alloc_size(params) __attribute__((__alloc_size__ params))
 #else
-#define attr_alloc_size
+#define attr_alloc_size(params)
 #endif
 
 
@@ -50,3 +53,13 @@ void* xcalloc(size_t memb_size, size_t memb_n) attr_malloc attr_alloc_size((1, 2
 void* xrealloc(void* old_ptr, size_t size) attr_alloc_size((2));
 char* stringf(const char* msg, ...)
     attr_printf(1, 2);
+
+#ifndef NDEBUG
+#include <stdio.h>
+void fprintfnl(FILE* stream, const char* fmt, ...) attr_printf(2, 3);
+#define warn(...) fprintfnl(stderr, __VA_ARGS__)
+#else
+#define warn(...)
+#endif
+
+#endif //MISC_H

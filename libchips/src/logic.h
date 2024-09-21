@@ -1,9 +1,14 @@
+#ifndef LIB_CHIPS_LOGIC_H
+#define LIB_CHIPS_LOGIC_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include "random.h"
 
 #define MAP_WIDTH (32)
 #define MAP_HEIGHT (32)
+
+#define MAX_CREATURES (2 * MAP_WIDTH * MAP_HEIGHT)
 
 typedef enum RulesetID {
   Ruleset_None = 0,
@@ -115,6 +120,7 @@ typedef enum TileID {
   Entity_Explosion = 0x7E,
   Animation_Reserved1 = 0x7F
 } TileID;
+
 bool TileID_is_slide(TileID id);
 bool TileID_is_ice(TileID id);
 bool TileID_is_door(TileID id);
@@ -124,6 +130,7 @@ bool TileID_is_ms_special(TileID id);
 bool TileID_is_terrain(TileID id);
 bool TileID_is_actor(TileID id);
 bool TileID_is_animation(TileID id);
+
 typedef int16_t Position;
 enum { POSITION_NULL = -1 };
 enum {
@@ -141,18 +148,28 @@ Direction Direction_left(Direction dir);
 Direction Direction_back(Direction dir);
 Direction Direction_right(Direction dir);
 
-TileID TileID_with_dir(TileID id, Direction dir);
-Direction TileID_get_dir(TileID id);
-Direction TileID_get_id(TileID id);
+TileID TileID_actor_with_dir(TileID id, Direction dir);
+Direction TileID_actor_get_dir(TileID id);
+Direction TileID_actor_get_id(TileID id);
 bool Direction_is_diagonal(Direction dir);
 
 Position Position_neighbor(Position self, Direction dir);
 
 typedef uint16_t GameInput;
+enum { //Mouse moves are a 19x19 square relative to Chip, packing them into 9 bits, I don't know where else to put this
+  MOUSERANGEMIN = -9,
+  MOUSERANGEMAX = +9,
+  MOUSERANGE    = 19,
+};
 enum {
   GAME_INPUT_DIR_MOVE_FIRST = DIRECTION_NORTH,
   GAME_INPUT_DIR_MOVE_LAST =
       DIRECTION_NORTH | DIRECTION_EAST | DIRECTION_SOUTH | DIRECTION_WEST,
+
+  GAME_INPUT_MOUSE_MOVE_FIRST,
+  GAME_INPUT_MOUSE_MOVE_LAST = GAME_INPUT_MOUSE_MOVE_FIRST + MOUSERANGE * MOUSERANGE - 1,
+  GAME_INPUT_ABS_MOUSE_MOVE_FIRST = 512,
+  GAME_INPUT_ABS_MOUSE_MOVE_LAST = GAME_INPUT_ABS_MOUSE_MOVE_FIRST + MAP_WIDTH * MAP_HEIGHT, //todo: what the ever loving hell is this, is this used?
 };
 bool GameInput_is_directional(GameInput self);
 
@@ -164,7 +181,7 @@ typedef struct Actor {
   int8_t animation_frame;
   bool hidden;
   // Ruleset-specific state
-  uint8_t state;
+  uint16_t state;
   Direction move_decision;
 } Actor;
 Position Actor_get_position(const Actor* actor);
@@ -178,6 +195,7 @@ typedef struct TileConn {
   Position from;
   Position to;
 } TileConn;
+
 typedef struct ConnList {
   uint8_t length;
   TileConn items[256];
@@ -206,7 +224,18 @@ enum {
 };
 typedef uint8_t ChipStatus;
 
+typedef struct MsSlipper {
+  Actor* actor;
+  Direction direction;
+} MsSlipper;
+
 typedef struct MsState {
+  uint32_t actor_count;
+  uint32_t slip_count;
+  MsSlipper slip_list[MAX_CREATURES];
+  uint32_t block_list_count;
+  Actor* block_list[MAX_CREATURES];
+  uint32_t mscc_slippers;
   uint8_t chip_ticks_since_moved;
   ChipStatus chip_status;
   Direction chip_last_slip_dir;
@@ -286,6 +315,8 @@ TileID Level_get_top_terrain(const Level* self, Position pos);
 TileID Level_get_bottom_terrain(const Level* self, Position pos);
 Actor* Level_get_actors_ptr(const Level* self);
 Actor* Level_get_actor_by_idx(const Level* self, uint32_t idx);
+uint8_t* Level_player_item_ptr(Level* level, TileID id);
+bool Level_player_has_item(const Level* level, TileID id);
 
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,
@@ -332,3 +363,6 @@ enum StateFlags {
 };
 
 extern const Ruleset lynx_logic;
+extern const Ruleset ms_logic;
+
+#endif //LIB_CHIPS_LOGIC_H

@@ -15,13 +15,26 @@ from ctypes import (
 )
 from enum import Enum
 from dataclasses import dataclass
+from os import getcwd
+from pathlib import Path
 from typing import Iterator
 from itertools import count as range_inf
 
 from PySide6.QtCore import QPoint
 
 
-libchips = CDLL("libchips.so")
+def get_libchips_path():
+    cwd = Path(getcwd())
+    cwd_lib = cwd / "libchips.so"
+    if cwd_lib.exists():
+        return str(cwd_lib)
+    local_build_lib = cwd / "libchips" / "build" / "libchips.so"
+    if local_build_lib.exists():
+        return str(local_build_lib)
+    raise Exception("Couldn't find libchips")
+
+
+libchips = CDLL(get_libchips_path())
 
 
 class LibchipsError(Exception):

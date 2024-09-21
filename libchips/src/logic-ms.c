@@ -695,6 +695,8 @@ static void Actor_end_floor_movement(Actor* self, Level* level) {
 /* Clean out deadwood entries in the slip list.
  */
 static void Level_update_sliplist(Level* self) {
+  if (self->ms_state.slip_count == 0)
+    return;
   for (int64_t n = self->ms_state.slip_count - 1; n >= 0; --n) {
     if (!(self->ms_state.slip_list[n].actor->state & (CS_SLIP | CS_SLIDE))) {
       Actor_end_floor_movement(self->ms_state.slip_list[n].actor, self);

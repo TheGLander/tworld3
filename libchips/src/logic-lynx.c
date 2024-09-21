@@ -3,8 +3,6 @@
 #include <string.h>
 #include "logic.h"
 
-#define MAX_CREATURES (2 * MAP_WIDTH * MAP_HEIGHT)
-
 #define PEDANTIC_MAX_CREATURES 128
 
 enum ActorState {
@@ -132,10 +130,10 @@ static bool lynx_init_level(Level* self) {
     MapCell* cell = &self->map[pos];
     // Convert MS tiles into Lynx-comptabile subtitutes
     if (cell->top.id == Block_Static) {
-      cell->top.id = TileID_with_dir(Block_Static, DIRECTION_NORTH);
+      cell->top.id = TileID_actor_with_dir(Block_Static, DIRECTION_NORTH);
     }
     if (cell->bottom.id == Block_Static) {
-      cell->bottom.id = TileID_with_dir(Block_Static, DIRECTION_NORTH);
+      cell->bottom.id = TileID_actor_with_dir(Block_Static, DIRECTION_NORTH);
     }
     if (TileID_is_ms_special(cell->top.id)) {
       cell->top.id = Wall;
@@ -161,8 +159,8 @@ static bool lynx_init_level(Level* self) {
       Actor* actor = &actors[actors_n];
       actors_n += 1;
       actor->pos = pos;
-      actor->id = TileID_get_id(cell->top.id);
-      actor->direction = TileID_get_dir(cell->top.id);
+      actor->id = TileID_actor_get_id(cell->top.id);
+      actor->direction = TileID_actor_get_dir(cell->top.id);
       if (self->lx_state.pedantic_mode && actor->id == Block &&
           TileID_is_ice(cell->bottom.id)) {
         actor->direction = DIRECTION_NIL;
@@ -429,7 +427,7 @@ static Direction TileID_get_exit_impeding_directions(TileID self) {
   };
 }
 
-static bool TileID_impedes_actor(TileID self,
+static bool TileID_impedes_move_into(TileID self,
                                  const Level* level,
                                  const Actor* actor,
                                  Direction dir) {
@@ -564,7 +562,7 @@ static bool Actor_check_collision(const Actor* self,
   if (new_terrain == SwitchWall_Closed || new_terrain == SwitchWall_Open) {
     new_terrain ^= level->lx_state.toggle_walls_xor;
   }
-  if (TileID_impedes_actor(new_terrain, level, self, dir))
+  if (TileID_impedes_move_into(new_terrain, level, self, dir))
     return false;
   // Check actor
   if (Level_cell_has_animation(level, target_pos)) {

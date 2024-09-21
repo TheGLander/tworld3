@@ -43,13 +43,13 @@ Direction Direction_right(Direction dir) {
   return ((dir << 3) | ((dir) >> 1)) & 15;
 }
 
-TileID TileID_with_dir(TileID id, Direction dir) {
+TileID TileID_actor_with_dir(TileID id, Direction dir) {
   return id | Direction_to_idx(dir);
 }
-Direction TileID_get_dir(TileID id) {
+Direction TileID_actor_get_dir(TileID id) {
   return Direction_from_idx(id & 3);
 }
-Direction TileID_get_id(TileID id) {
+Direction TileID_actor_get_id(TileID id) {
   return id & ~3;
 }
 

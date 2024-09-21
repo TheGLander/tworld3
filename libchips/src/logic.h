@@ -5,11 +5,6 @@
 #include <stdint.h>
 #include "random.h"
 
-#ifndef NDEBUG
-#include <stdio.h>
-#define warn(...) fprintf(stderr, __VA_ARGS__)
-#endif
-
 #define MAP_WIDTH (32)
 #define MAP_HEIGHT (32)
 

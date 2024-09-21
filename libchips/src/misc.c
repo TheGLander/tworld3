@@ -13,8 +13,10 @@ void* xmalloc(size_t size) {
 }
 
 void* xcalloc(size_t memb_size, size_t memb_n) {
-  void* ptr = xmalloc(memb_size * memb_n);
-  memset(ptr, 0, memb_size * memb_n);
+  void* ptr = calloc(memb_size, memb_n);
+  if (ptr == NULL && memb_size * memb_n != 0) {
+    abort();
+  }
   return ptr;
 }
 
@@ -47,3 +49,13 @@ char* stringf(const char* msg, ...) {
   va_end(list2);
   return formatted_msg;
 };
+
+#ifndef NDEBUG
+void fprintfnl(FILE* stream, const char* fmt, ...) {
+  va_list list;
+  va_start(list, fmt);
+  vfprintf(stream, fmt, list);
+  fputs("\n", stream);
+  va_end(list);
+}
+#endif

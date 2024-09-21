@@ -1,7 +1,9 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "logic.h"
+#include "misc.h"
 
 static bool Actor_advance_movement(Actor* self, Level* level, Direction dir);
 
@@ -1866,8 +1868,7 @@ static void Level_create_clones(Level* self) {
 }
 
 static bool ms_init_level(Level* self) {
-  self->actors = calloc(MAX_CREATURES, sizeof(Actor));
-  assert(self->actors != NULL);
+  self->actors = xcalloc(MAX_CREATURES, sizeof(Actor));
 
   self->status_flags &= ~SF_BAD_TILES;
   self->status_flags |= SF_NO_ANIMATION;

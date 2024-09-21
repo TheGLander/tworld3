@@ -1,5 +1,6 @@
-from PySide6.QtCore import QPoint, QRect, QRectF
-from PySide6.QtGui import QOpenGLContext, QPaintEvent, QPainter, Qt
+from typing import Optional
+from PySide6.QtCore import QRect, QRectF
+from PySide6.QtGui import QPaintEvent, QPainter
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from libchips import Actor, AnyTileID, Direction, Level, Position
@@ -15,14 +16,13 @@ def scale_rect(src: QRectF, factor: float):
 
 class LevelRenderer(QWidget):
     painter: QPainter
-    level: Level
+    level: Optional[Level] = None
     tileset: Tileset
     camera: QRect = QRect(11, 15, 9, 9)
     tile_scale: float = 1.0
 
-    def __init__(self, level: Level, tileset: Tileset, parent=None) -> None:
+    def __init__(self, tileset: Tileset, parent=None) -> None:
         super().__init__(parent)
-        self.level = level
         self.tileset = tileset
         self.painter = QPainter()
         self.rescale()
@@ -63,6 +63,8 @@ class LevelRenderer(QWidget):
         self.painter.drawImage(target, self.tileset.image, source)
 
     def draw_viewport(self):
+        if not self.level:
+            return
         self.painter.begin(self)
         # Draw terrain
         for y in range(self.camera.top(), self.camera.bottom() + 1):

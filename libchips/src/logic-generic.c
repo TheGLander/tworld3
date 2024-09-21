@@ -189,3 +189,7 @@ void Level_free(Level* self) {
   self->ruleset->uninit_level(self);
   free(self);
 }
+
+void Level_tick(Level* self) {
+  self->ruleset->tick_level(self);
+}

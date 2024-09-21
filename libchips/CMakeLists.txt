@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 
 project(libchips LANGUAGES C)
+# set(CMAKE_C_FLAGS -fsanitize=address)
 
 set(libchips_src)
 list(APPEND libchips_src

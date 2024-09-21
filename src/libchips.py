@@ -55,6 +55,7 @@ class Ruleset(c_void_p):
 
 
 lynx_logic = Ruleset.from_global_var("lynx_logic")
+ms_logic = Ruleset.from_global_var("ms_logic")
 
 
 class Direction(Enum):
@@ -66,6 +67,10 @@ class Direction(Enum):
 
     def to_idx(self):
         return (0x30210 >> (self.value * 2)) & 3
+
+    @staticmethod
+    def from_idx(idx: int):
+        return Direction(1 << idx)
 
 
 class TileID(Enum):
@@ -156,6 +161,16 @@ class TileID(Enum):
     Entity_Explosion = 0x7E
     Animation_Reserved1 = 0x7F
 
+    def is_actor(self):
+        return TileID.Animation_Reserved1.value >= self.value >= TileID.Chip.value
+
+    @staticmethod
+    def from_libchips(id: int) -> "AnyTileID":
+        pure_id = TileID(id & ~3)
+        if pure_id.is_actor():
+            return (pure_id, Direction.from_idx(id & 3))
+        return TileID(id)
+
 
 AnyTileID = TileID | tuple[TileID, Direction]
 
@@ -216,8 +231,8 @@ libchips.Level_get_time_limit.restype = c_uint32
 libchips.Level_get_current_tick.restype = c_uint32
 libchips.Level_get_status_flags.restype = c_uint16
 libchips.Level_get_sfx.restype = c_uint32
-libchips.Level_get_top_terrain.restype = TileID
-libchips.Level_get_bottom_terrain.restype = TileID
+libchips.Level_get_top_terrain.restype = c_uint8
+libchips.Level_get_bottom_terrain.restype = c_uint8
 libchips.Level_get_actor_by_idx.restype = Actor
 
 
@@ -253,14 +268,19 @@ class Level(c_void_p):
     def sfx(self) -> int:
         return libchips.Level_get_sfx(self)
 
-    def get_top_terrain(self, pos: Position) -> TileID:
-        return libchips.Level_get_top_terrain(self, pos.to_int())
+    def get_top_terrain(self, pos: Position) -> AnyTileID:
+        return TileID.from_libchips(libchips.Level_get_top_terrain(self, pos.to_int()))
 
-    def get_bottom_terrain(self, pos: Position) -> TileID:
-        return libchips.Level_get_bottom_terrain(self, pos.to_int())
+    def get_bottom_terrain(self, pos: Position) -> AnyTileID:
+        return TileID.from_libchips(
+            libchips.Level_get_bottom_terrain(self, pos.to_int())
+        )
 
     def get_actor_by_idx(self, idx: int) -> Actor:
         return libchips.Level_get_actor_by_idx(self, idx)
+
+    def tick(self):
+        libchips.Level_tick(self)
 
     @property
     def actors(self) -> Iterator[Actor]:

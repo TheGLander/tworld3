@@ -359,6 +359,8 @@ void Level_add_sfx(Level* self, Sfx sfx);
 void Level_stop_sfx(Level* self, Sfx sfx);
 void Level_free(Level* self);
 
+void Level_tick(Level* self);
+
 enum StateFlags {
   SF_INVALID = 0x2,
   SF_BAD_TILES = 0x4,

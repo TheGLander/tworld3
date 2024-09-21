@@ -8,6 +8,35 @@
 #define west(id) ((id) | 1)
 #define east(id) ((id) | 2)
 #define south(id) ((id) | 3)
+const char* LevelMetadata_get_title(const LevelMetadata* self) {
+  return self->title;
+};
+uint16_t LevelMetadata_get_level_number(const LevelMetadata* self) {
+  return self->level_number;
+};
+uint16_t LevelMetadata_get_time_limit(const LevelMetadata* self) {
+  return self->time_limit;
+};
+uint16_t LevelMetadata_get_chips_required(const LevelMetadata* self) {
+  return self->chips_required;
+};
+const char* LevelMetadata_get_password(const LevelMetadata* self) {
+  return self->password;
+};
+const char* LevelMetadata_get_hint(const LevelMetadata* self) {
+  return self->hint;
+};
+const char* LevelMetadata_get_author(const LevelMetadata* self) {
+  return self->author;
+};
+
+uint16_t LevelSet_get_levels_n(const LevelSet* self) {
+  return self->levels_n;
+};
+LevelMetadata* LevelSet_get_level(LevelSet* self, uint16_t idx) {
+  return &self->levels[idx];
+};
+
 static const TileID dat_tileid_map[] = {
     // 0x00
     Empty, Wall, Chip, Water, Fire, HiddenWall_Perm, Wall_North, Wall_West,

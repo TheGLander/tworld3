@@ -167,6 +167,11 @@ typedef struct Actor {
   uint8_t state;
   Direction move_decision;
 } Actor;
+Position Actor_get_position(const Actor* actor);
+TileID Actor_get_id(const Actor* actor);
+int8_t Actor_get_move_cooldown(const Actor* actor);
+int8_t Actor_get_animation_frame(const Actor* actor);
+bool Actor_get_hidden(const Actor* actor);
 
 typedef struct TileConn {
   Position from;
@@ -234,6 +239,7 @@ typedef struct Ruleset {
   void (*tick_level)(Level*);
   void (*uninit_level)(Level*);
 } Ruleset;
+RulesetID Ruleset_get_id(const Ruleset* self);
 
 typedef struct Level {
   // `game`?
@@ -264,6 +270,21 @@ typedef struct Level {
     LxState lx_state;
   };
 } Level;
+
+const Ruleset* Level_get_ruleset(const Level* self);
+int8_t Level_get_time_offset(const Level* self);
+uint32_t Level_get_time_limit(const Level* self);
+uint32_t Level_get_current_tick(const Level* self);
+uint32_t Level_get_chips_left(const Level* self);
+uint8_t* Level_get_player_keys(Level* self);
+uint8_t* Level_get_player_boots(Level* self);
+uint16_t Level_get_status_flags(const Level* self);
+uint32_t Level_get_sfx(const Level* self);
+Prng* Level_get_prng_ptr(Level* self);
+TileID Level_get_top_terrain(const Level* self, Position pos);
+TileID Level_get_bottom_terrain(const Level* self, Position pos);
+Actor* Level_get_actors_ptr(const Level* self);
+
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,
   SND_CHIP_WINS = 1,
@@ -296,8 +317,9 @@ typedef enum Sfx {
   SND_COUNT = 26,
 } Sfx;
 
-void Level_add_sfx(Level* level, Sfx sfx);
-void Level_stop_sfx(Level* level, Sfx sfx);
+void Level_add_sfx(Level* self, Sfx sfx);
+void Level_stop_sfx(Level* self, Sfx sfx);
+void Level_free(Level* self);
 
 enum StateFlags {
   SF_INVALID = 0x2,

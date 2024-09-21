@@ -276,7 +276,7 @@ Result_LevelPtr LevelMetadata_make_level(LevelMetadata const* self,
   }
   if (self->monster_list) {
     memcpy(level->ms_state.init_actor_list, self->monster_list,
-           256 * sizeof(Position));
+           self->monsters_n * sizeof(Position));
   }
   uint8_t uncompressed_field[MAP_WIDTH * MAP_HEIGHT];
   if (!uncompress_field(uncompressed_field, self->layer_top,

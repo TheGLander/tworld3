@@ -84,6 +84,9 @@ RulesetID Ruleset_get_id(const Ruleset* self) {
 Position Actor_get_position(const Actor* actor) {
   return actor->pos;
 }
+Direction Actor_get_direction(const Actor* self) {
+  return self->direction;
+}
 TileID Actor_get_id(const Actor* actor) {
   return actor->id;
 }

@@ -40,7 +40,7 @@ LevelMetadata* LevelSet_get_level(LevelSet* self, uint16_t idx) {
 
 static const TileID dat_tileid_map[] = {
     // 0x00
-    Empty, Wall, Chip, Water, Fire, HiddenWall_Perm, Wall_North, Wall_West,
+    Empty, Wall, ICChip, Water, Fire, HiddenWall_Perm, Wall_North, Wall_West,
     Wall_South, Wall_East, Block_Static, Dirt, Ice, Slide_South,
     // 0x10
     north(Block), west(Block), south(Block), east(Block), Slide_North,

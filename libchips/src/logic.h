@@ -169,6 +169,7 @@ typedef struct Actor {
 } Actor;
 Position Actor_get_position(const Actor* actor);
 TileID Actor_get_id(const Actor* actor);
+Direction Actor_get_direction(const Actor* actor);
 int8_t Actor_get_move_cooldown(const Actor* actor);
 int8_t Actor_get_animation_frame(const Actor* actor);
 bool Actor_get_hidden(const Actor* actor);

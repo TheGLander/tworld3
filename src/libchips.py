@@ -16,6 +16,9 @@ from ctypes import (
 from enum import Enum
 from dataclasses import dataclass
 from typing import Iterator
+from itertools import count as range_inf
+
+from PySide6.QtCore import QPoint
 
 
 libchips = CDLL("libchips.so")
@@ -52,6 +55,17 @@ class Ruleset(c_void_p):
 
 
 lynx_logic = Ruleset.from_global_var("lynx_logic")
+
+
+class Direction(Enum):
+    Nil = 0
+    North = 1
+    West = 2
+    East = 4
+    South = 8
+
+    def to_idx(self):
+        return (0x30210 >> (self.value * 2)) & 3
 
 
 class TileID(Enum):
@@ -143,6 +157,9 @@ class TileID(Enum):
     Animation_Reserved1 = 0x7F
 
 
+AnyTileID = TileID | tuple[TileID, Direction]
+
+
 @dataclass
 class Position:
     x: int
@@ -155,18 +172,26 @@ class Position:
     def from_int(pos: int):
         return Position(pos % 32, pos // 32)
 
+    def to_qpoint(self):
+        return QPoint(self.x, self.y)
+
 
 libchips.Actor_get_position.restype = c_int16
 libchips.Actor_get_id.restype = c_uint8
 libchips.Actor_get_move_cooldown.restype = c_int8
 libchips.Actor_get_animation_frame.restype = c_int8
 libchips.Actor_get_hidden.restype = c_bool
+libchips.Actor_get_direction.restype = c_uint8
 
 
 class Actor(c_void_p):
     @property
     def position(self) -> Position:
         return Position.from_int(libchips.Actor_get_position(self))
+
+    @property
+    def direction(self) -> Direction:
+        return Direction(libchips.Actor_get_direction(self))
 
     @property
     def id(self) -> TileID:
@@ -233,6 +258,17 @@ class Level(c_void_p):
 
     def get_bottom_terrain(self, pos: Position) -> TileID:
         return libchips.Level_get_bottom_terrain(self, pos.to_int())
+
+    def get_actor_by_idx(self, idx: int) -> Actor:
+        return libchips.Level_get_actor_by_idx(self, idx)
+
+    @property
+    def actors(self) -> Iterator[Actor]:
+        for idx in range_inf(0):
+            actor = self.get_actor_by_idx(idx)
+            if actor.id == TileID.Nothing:
+                break
+            yield actor
 
 
 libchips.LevelMetadata_get_title.restype = c_char_p

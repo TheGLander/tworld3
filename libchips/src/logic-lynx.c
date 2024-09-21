@@ -22,7 +22,7 @@ enum CollisionCheckFlags {
   CMM_PUSHBLOCKSNOW = 0x0010,
 };
 
-static inline TileID Level_get_terrain(const Level* self, Position pos) {
+static inline TileID Level_get_terrain(Level const* self, Position pos) {
   return self->map[pos].top.id;
 }
 static inline void Level_set_terrain(Level* self, Position pos, TileID tile) {
@@ -58,7 +58,7 @@ static inline void Level_cell_add_claim(Level* self, Position pos) {
 static inline void Level_cell_remove_claim(Level* self, Position pos) {
   self->map[pos].top.state &= ~FS_CLAIMED;
 }
-static inline bool Level_cell_has_claim(const Level* self, Position pos) {
+static inline bool Level_cell_has_claim(Level const* self, Position pos) {
   return self->map[pos].top.state & FS_CLAIMED;
 }
 static inline void Level_cell_add_animation(Level* self, Position pos) {
@@ -67,33 +67,33 @@ static inline void Level_cell_add_animation(Level* self, Position pos) {
 static inline void Level_cell_remove_animation(Level* self, Position pos) {
   self->map[pos].top.state &= ~FS_ANIMATED;
 }
-static inline bool Level_cell_has_animation(const Level* self, Position pos) {
+static inline bool Level_cell_has_animation(Level const* self, Position pos) {
   return self->map[pos].top.state & FS_ANIMATED;
 }
 static inline void Level_cell_add_trap_presence(Level* self, Position pos) {
   self->map[pos].top.state |= FS_HAD_TRAP;
 }
-static inline bool Level_cell_ever_had_trap(const Level* self, Position pos) {
+static inline bool Level_cell_ever_had_trap(Level const* self, Position pos) {
   return self->map[pos].top.state & FS_HAD_TRAP;
 }
 static inline void Level_cell_add_teleport_presence(Level* self, Position pos) {
   self->map[pos].top.state |= FS_HAD_TELEPORT;
 }
-static inline bool Level_cell_ever_had_teleport(const Level* self,
+static inline bool Level_cell_ever_had_teleport(Level const* self,
                                                 Position pos) {
   return self->map[pos].top.state & FS_HAD_TELEPORT;
 }
 static inline Actor* Level_get_chip(Level* self) {
   return &self->actors[0];
 }
-static inline bool Level_in_endgame(const Level* self) {
+static inline bool Level_in_endgame(Level const* self) {
   return self->lx_state.endgame_timer > 0;
 }
 static void Level_start_endgame(Level* self) {
   self->lx_state.endgame_timer = 13;
   self->timer_offset = 1;
 }
-static inline bool Actor_is_moving(const Actor* self) {
+static inline bool Actor_is_moving(Actor const* self) {
   return self->move_cooldown > 0;
 }
 static uint8_t Level_lynx_rng(Level* self) {
@@ -293,7 +293,7 @@ static void Actor_set_forced_move(Actor* self, Direction dir) {
   self->state |= dir;
 }
 
-static Direction Actor_get_forced_move(const Actor* self) {
+static Direction Actor_get_forced_move(Actor const* self) {
   return self->state & CS_FDIRMASK;
 }
 
@@ -384,8 +384,8 @@ static Direction TileID_get_exit_impeding_directions(TileID self) {
 }
 
 static bool TileID_impedes_actor(TileID self,
-                                 const Level* level,
-                                 const Actor* actor,
+                                 Level const* level,
+                                 Actor const* actor,
                                  Direction dir) {
   switch (self) {
     case Wall:
@@ -456,7 +456,7 @@ enum FindActorFlags {
   FA_ANIMS = 0x02,
 };
 
-static Actor* Level_find_actor(const Level* self, Position pos, uint8_t flags) {
+static Actor* Level_find_actor(Level const* self, Position pos, uint8_t flags) {
   Actor* actors = self->actors;
   if (flags & FA_NO_CHIP) {
     actors += 1;
@@ -474,7 +474,7 @@ static bool Actor_can_be_pushed(Actor* self,
                                 Direction dir,
                                 uint8_t flags);
 
-static bool Actor_check_collision(const Actor* self,
+static bool Actor_check_collision(Actor const* self,
                                   Level* level,
                                   Direction dir,
                                   uint8_t flags) {
@@ -666,7 +666,7 @@ static TriRes Actor_enter_tile(Actor* self, Level* level, bool pedantic_idle) {
 /**
  * Returns `true` if the actor has still cooldown to go
  */
-static TriRes Actor_reduce_cooldown(Actor* self, const Level* level) {
+static TriRes Actor_reduce_cooldown(Actor* self, Level const* level) {
   if (TileID_is_animation(self->id))
     return TRIRES_SUCCESS;
   assert(self->move_cooldown > 0);
@@ -757,8 +757,8 @@ static bool Actor_can_be_pushed(Actor* self,
   return true;
 }
 
-static const int clockwise_directions[4] = {DIRECTION_NORTH, DIRECTION_EAST,
-                                            DIRECTION_SOUTH, DIRECTION_WEST};
+static Direction const clockwise_directions[4] = {
+    DIRECTION_NORTH, DIRECTION_EAST, DIRECTION_SOUTH, DIRECTION_WEST};
 
 static void Actor_get_checked_decision_dirs(Actor* self,
                                             Level* level,
@@ -948,7 +948,7 @@ static void Actor_do_decision(Actor* self, Level* level) {
   }
 }
 
-static Position Level_find_connected_cell(const Level* self,
+static Position Level_find_connected_cell(Level const* self,
                                           Position from_pos,
                                           TileID target_id,
                                           ConnList* list) {
@@ -1112,7 +1112,7 @@ static void lynx_uninit_level(Level* level) {
   free(level->actors);
 }
 
-const Ruleset lynx_logic = {.id = Ruleset_Lynx,
+Ruleset const lynx_logic = {.id = Ruleset_Lynx,
                             .init_level = lynx_init_level,
                             .tick_level = lynx_tick_level,
                             .uninit_level = lynx_uninit_level};

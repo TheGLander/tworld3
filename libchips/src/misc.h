@@ -27,7 +27,6 @@
 #define attr_alloc_size(params)
 #endif
 
-
 #if defined(__has_attribute) && __has_attribute(__printf__)
 #define attr_printf(params) __attribute__((__format__(__printf__, params)))
 #else
@@ -45,21 +44,20 @@
 #define compiler_expect(a, b) (a)
 #endif
 
-
 #define lengthof(arr) (sizeof(arr) / sizeof(arr[0]))
 
 void* xmalloc(size_t size) attr_malloc attr_alloc_size((1));
-void* xcalloc(size_t memb_size, size_t memb_n) attr_malloc attr_alloc_size((1, 2));
+void* xcalloc(size_t memb_size, size_t memb_n) attr_malloc
+    attr_alloc_size((1, 2));
 void* xrealloc(void* old_ptr, size_t size) attr_alloc_size((2));
-char* stringf(const char* msg, ...)
-    attr_printf(1, 2);
+char* stringf(char const* msg, ...) attr_printf(1, 2);
 
 #ifndef NDEBUG
 #include <stdio.h>
-void fprintfnl(FILE* stream, const char* fmt, ...) attr_printf(2, 3);
+void fprintfnl(FILE* stream, char const* fmt, ...) attr_printf(2, 3);
 #define warn(...) fprintfnl(stderr, __VA_ARGS__)
 #else
 #define warn(...)
 #endif
 
-#endif //MISC_H
+#endif  // MISC_H

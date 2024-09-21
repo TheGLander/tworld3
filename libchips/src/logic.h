@@ -156,10 +156,11 @@ bool Direction_is_diagonal(Direction dir);
 Position Position_neighbor(Position self, Direction dir);
 
 typedef uint16_t GameInput;
-enum { //Mouse moves are a 19x19 square relative to Chip, packing them into 9 bits, I don't know where else to put this
+enum {  // Mouse moves are a 19x19 square relative to Chip, packing them into 9
+        // bits, I don't know where else to put this
   MOUSERANGEMIN = -9,
   MOUSERANGEMAX = +9,
-  MOUSERANGE    = 19,
+  MOUSERANGE = 19,
 };
 enum {
   GAME_INPUT_DIR_MOVE_FIRST = DIRECTION_NORTH,
@@ -167,9 +168,13 @@ enum {
       DIRECTION_NORTH | DIRECTION_EAST | DIRECTION_SOUTH | DIRECTION_WEST,
 
   GAME_INPUT_MOUSE_MOVE_FIRST,
-  GAME_INPUT_MOUSE_MOVE_LAST = GAME_INPUT_MOUSE_MOVE_FIRST + MOUSERANGE * MOUSERANGE - 1,
+  GAME_INPUT_MOUSE_MOVE_LAST =
+      GAME_INPUT_MOUSE_MOVE_FIRST + MOUSERANGE * MOUSERANGE - 1,
   GAME_INPUT_ABS_MOUSE_MOVE_FIRST = 512,
-  GAME_INPUT_ABS_MOUSE_MOVE_LAST = GAME_INPUT_ABS_MOUSE_MOVE_FIRST + MAP_WIDTH * MAP_HEIGHT, //todo: what the ever loving hell is this, is this used?
+  GAME_INPUT_ABS_MOUSE_MOVE_LAST =
+      GAME_INPUT_ABS_MOUSE_MOVE_FIRST +
+      MAP_WIDTH *
+          MAP_HEIGHT,  // todo: what the ever loving hell is this, is this used?
 };
 bool GameInput_is_directional(GameInput self);
 
@@ -365,4 +370,4 @@ enum StateFlags {
 extern const Ruleset lynx_logic;
 extern const Ruleset ms_logic;
 
-#endif //LIB_CHIPS_LOGIC_H
+#endif  // LIB_CHIPS_LOGIC_H

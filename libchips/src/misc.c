@@ -1,7 +1,7 @@
-#include <string.h>
-#include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // `malloc`, but aborts on failure
 void* xmalloc(size_t size) {
@@ -35,9 +35,8 @@ void* xrealloc(void* old_ptr, size_t size) {
   return ptr;
 }
 
-
 // `sprintf` but just measures and returns a string by itself
-char* stringf(const char* msg, ...) {
+char* stringf(char const* msg, ...) {
   va_list list1;
   va_list list2;
   va_start(list1, msg);
@@ -51,7 +50,7 @@ char* stringf(const char* msg, ...) {
 };
 
 #ifndef NDEBUG
-void fprintfnl(FILE* stream, const char* fmt, ...) {
+void fprintfnl(FILE* stream, char const* fmt, ...) {
   va_list list;
   va_start(list, fmt);
   vfprintf(stream, fmt, list);

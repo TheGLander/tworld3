@@ -37,13 +37,13 @@ static uint8_t crush_to_3(uint64_t val) {
 static uint8_t crush_to_3_using_different_bits(uint64_t val) {
   return (int)((3.0 * (val & 0x0FFFFFFFUL)) / (double)0x10000000UL);
 }
-//returns a value between 0 and 2
+// returns a value between 0 and 2
 uint8_t Prng_random3(Prng* self) {
   uint64_t val = Prng_random(self);
   return crush_to_3(val);
 }
 
-//returns a value between 0 and 3
+// returns a value between 0 and 3
 uint8_t Prng_random4(Prng* self) {
   return Prng_random(self) >> 29;
 }
@@ -51,7 +51,9 @@ uint8_t Prng_random4(Prng* self) {
 void Prng_permute3(Prng* self, void* arr, size_t const size) {
   unsigned char* arr_c = arr;
   assert(size <= 32);
-  unsigned char temp[32] = {0}; //Note: this means that this func only works with value sizes up to 32 (which is total overkill)
+  unsigned char temp[32] = {
+      0};  // Note: this means that this func only works with value sizes up to
+           // 32 (which is total overkill)
   uint64_t val = Prng_random(self);
   // Swap array index 1 with either 0 or 1
   uint8_t swap_idx = val >> 30;
@@ -70,7 +72,9 @@ void Prng_permute4(Prng* self, void* arr, size_t const size) {
   // calls to not reuse the same bits.
   unsigned char* arr_c = arr;
   assert(size <= 32);
-  unsigned char temp[32] = {0}; //Note: this means that this func only works with value sizes up to 32 (which is total overkill)
+  unsigned char temp[32] = {
+      0};  // Note: this means that this func only works with value sizes up to
+           // 32 (which is total overkill)
   uint64_t val = Prng_random(self);
   // Swap array index 1 with either 0 or 1
   uint8_t swap_idx = val >> 30;

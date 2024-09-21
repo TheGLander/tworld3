@@ -77,42 +77,42 @@ void Level_stop_sfx(Level* level, Sfx sfx) {
   level->sfx &= ~(1 >> sfx);
 }
 
-RulesetID Ruleset_get_id(const Ruleset* self) {
+RulesetID Ruleset_get_id(Ruleset const* self) {
   return self->id;
 }
 
-Position Actor_get_position(const Actor* actor) {
+Position Actor_get_position(Actor const* actor) {
   return actor->pos;
 }
-Direction Actor_get_direction(const Actor* self) {
+Direction Actor_get_direction(Actor const* self) {
   return self->direction;
 }
-TileID Actor_get_id(const Actor* actor) {
+TileID Actor_get_id(Actor const* actor) {
   return actor->id;
 }
-int8_t Actor_get_move_cooldown(const Actor* actor) {
+int8_t Actor_get_move_cooldown(Actor const* actor) {
   return actor->move_cooldown;
 }
-int8_t Actor_get_animation_frame(const Actor* actor) {
+int8_t Actor_get_animation_frame(Actor const* actor) {
   return actor->animation_frame;
 }
-bool Actor_get_hidden(const Actor* actor) {
+bool Actor_get_hidden(Actor const* actor) {
   return actor->hidden;
 }
 
-const Ruleset* Level_get_ruleset(const Level* self) {
+Ruleset const* Level_get_ruleset(Level const* self) {
   return self->ruleset;
 }
-int8_t Level_get_time_offset(const Level* self) {
+int8_t Level_get_time_offset(Level const* self) {
   return self->timer_offset;
 }
-uint32_t Level_get_time_limit(const Level* self) {
+uint32_t Level_get_time_limit(Level const* self) {
   return self->time_limit;
 }
-uint32_t Level_get_current_tick(const Level* self) {
+uint32_t Level_get_current_tick(Level const* self) {
   return self->current_tick;
 }
-uint32_t Level_get_chips_left(const Level* self) {
+uint32_t Level_get_chips_left(Level const* self) {
   return self->chips_left;
 }
 uint8_t* Level_get_player_keys(Level* self) {
@@ -121,25 +121,25 @@ uint8_t* Level_get_player_keys(Level* self) {
 uint8_t* Level_get_player_boots(Level* self) {
   return self->player_boots;
 }
-uint16_t Level_get_status_flags(const Level* self) {
+uint16_t Level_get_status_flags(Level const* self) {
   return self->status_flags;
 }
-uint32_t Level_get_sfx(const Level* self) {
+uint32_t Level_get_sfx(Level const* self) {
   return self->sfx;
 }
 Prng* Level_get_prng_ptr(Level* self) {
   return &self->prng;
 };
-TileID Level_get_top_terrain(const Level* self, Position pos) {
+TileID Level_get_top_terrain(Level const* self, Position pos) {
   return self->map[pos].top.id;
 };
-TileID Level_get_bottom_terrain(const Level* self, Position pos) {
+TileID Level_get_bottom_terrain(Level const* self, Position pos) {
   return self->map[pos].bottom.id;
 };
-Actor* Level_get_actors_ptr(const Level* self) {
+Actor* Level_get_actors_ptr(Level const* self) {
   return self->actors;
 };
-Actor* Level_get_actor_by_idx(const Level* self, uint32_t idx) {
+Actor* Level_get_actor_by_idx(Level const* self, uint32_t idx) {
   return &self->actors[idx];
 };
 uint8_t* Level_player_item_ptr(Level* level, TileID id) {
@@ -180,7 +180,7 @@ uint8_t* Level_player_item_ptr(Level* level, TileID id) {
       return NULL;
   }
 }
-bool Level_player_has_item(const Level* level, TileID id) {
+bool Level_player_has_item(Level const* level, TileID id) {
   // const-discarding pointer cast: it's okay, we don't ever write to the return
   // pointer, which is the only reason why this function isn't const-pointer'd
   return *Level_player_item_ptr((Level*)level, id) > 0;

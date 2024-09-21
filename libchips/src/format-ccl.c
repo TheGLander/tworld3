@@ -9,36 +9,36 @@
 #define east(id) ((id) | 2)
 #define south(id) ((id) | 3)
 
-const char* LevelMetadata_get_title(const LevelMetadata* self) {
+char const* LevelMetadata_get_title(LevelMetadata const* self) {
   return self->title;
 };
-uint16_t LevelMetadata_get_level_number(const LevelMetadata* self) {
+uint16_t LevelMetadata_get_level_number(LevelMetadata const* self) {
   return self->level_number;
 };
-uint16_t LevelMetadata_get_time_limit(const LevelMetadata* self) {
+uint16_t LevelMetadata_get_time_limit(LevelMetadata const* self) {
   return self->time_limit;
 };
-uint16_t LevelMetadata_get_chips_required(const LevelMetadata* self) {
+uint16_t LevelMetadata_get_chips_required(LevelMetadata const* self) {
   return self->chips_required;
 };
-const char* LevelMetadata_get_password(const LevelMetadata* self) {
+char const* LevelMetadata_get_password(LevelMetadata const* self) {
   return self->password;
 };
-const char* LevelMetadata_get_hint(const LevelMetadata* self) {
+char const* LevelMetadata_get_hint(LevelMetadata const* self) {
   return self->hint;
 };
-const char* LevelMetadata_get_author(const LevelMetadata* self) {
+char const* LevelMetadata_get_author(LevelMetadata const* self) {
   return self->author;
 };
 
-uint16_t LevelSet_get_levels_n(const LevelSet* self) {
+uint16_t LevelSet_get_levels_n(LevelSet const* self) {
   return self->levels_n;
 };
 LevelMetadata* LevelSet_get_level(LevelSet* self, uint16_t idx) {
   return &self->levels[idx];
 };
 
-static const TileID dat_tileid_map[] = {
+static TileID const dat_tileid_map[] = {
     // 0x00
     Empty, Wall, ICChip, Water, Fire, HiddenWall_Perm, Wall_North, Wall_West,
     Wall_South, Wall_East, Block_Static, Dirt, Ice, Slide_South,
@@ -70,10 +70,10 @@ static const TileID dat_tileid_map[] = {
     Key_Blue, Key_Red, Key_Green, Key_Yellow, Boots_Water, Boots_Fire,
     Boots_Ice, Boots_Slide, north(Chip), west(Chip), south(Chip), east(Chip)};
 
-static uint16_t read_uint16_le(const uint8_t* data) {
+static uint16_t read_uint16_le(uint8_t const* data) {
   return data[0] + (data[1] << 8);
 }
-static uint32_t read_uint32_le(const uint8_t* data) {
+static uint32_t read_uint32_le(uint8_t const* data) {
   return data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
 }
 
@@ -90,8 +90,8 @@ enum CllChunkTypes {
   CCL_CHUNK_MONSTER_LIST = 10,
 };
 
-Result_LevelSetPtr parse_ccl(const uint8_t* data, size_t data_len) {
-  const uint8_t* const base_data = data;
+Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len) {
+  uint8_t const* const base_data = data;
 #define assert_data_avail(...)                                     \
   if (data - base_data __VA_OPT__(-1 +) __VA_ARGS__ >= data_len) { \
     LevelSet_free(set);                                            \
@@ -120,7 +120,7 @@ Result_LevelSetPtr parse_ccl(const uint8_t* data, size_t data_len) {
     LevelMetadata* meta = &set->levels[idx];
     *meta = (LevelMetadata){};
     assert_data_avail(12);
-    const uint8_t* const level_data_ptr = data;
+    uint8_t const* const level_data_ptr = data;
     uint16_t level_data_len = read_uint16_le(data);
     meta->level_number = read_uint16_le(data + 2);
     meta->time_limit = read_uint16_le(data + 4);
@@ -151,7 +151,7 @@ Result_LevelSetPtr parse_ccl(const uint8_t* data, size_t data_len) {
       assert_data_avail(chunk_len);
       if (chunk_type == CCL_CHUNK_TITLE) {
         meta->title =
-            strndup((const char*)data, chunk_len > 64 ? chunk_len : 64);
+            strndup((char const*)data, chunk_len > 64 ? chunk_len : 64);
       } else if (chunk_type == CCL_CHUNK_TRAPS) {
         uint8_t traps_n = chunk_type / 10;
         meta->trap_links = xmalloc(sizeof(ConnList));
@@ -179,7 +179,7 @@ Result_LevelSetPtr parse_ccl(const uint8_t* data, size_t data_len) {
           conn->to = to_x + to_y * MAP_WIDTH;
         }
       } else if (chunk_type == CCL_CHUNK_PASSWORD) {
-        strncpy(meta->password, (const char*)data,
+        strncpy(meta->password, (char const*)data,
                 chunk_len > 10 ? 10 : chunk_len);
         // Decode the password
         for (char* password_char = meta->password; *password_char != 0;
@@ -188,7 +188,7 @@ Result_LevelSetPtr parse_ccl(const uint8_t* data, size_t data_len) {
         }
       } else if (chunk_type == CCL_CHUNK_HINT) {
         meta->hint =
-            strndup((const char*)data, chunk_len > 128 ? 128 : chunk_len);
+            strndup((char const*)data, chunk_len > 128 ? 128 : chunk_len);
       } else if (chunk_type == CCL_CHUNK_MONSTER_LIST) {
         uint8_t monsters_n = chunk_len / 2;
         meta->monster_list = xmalloc(monsters_n * sizeof(Position));
@@ -200,7 +200,7 @@ Result_LevelSetPtr parse_ccl(const uint8_t* data, size_t data_len) {
         }
       } else if (chunk_type == CCL_CHUNK_AUTHOR) {
         meta->author =
-            strndup((const char*)data, chunk_len > 128 ? 128 : chunk_len);
+            strndup((char const*)data, chunk_len > 128 ? 128 : chunk_len);
       } else {
         // Unknown chunk type, ignore
       }
@@ -233,11 +233,11 @@ void LevelSet_free(LevelSet* self) {
 }
 
 static bool uncompress_field(uint8_t* to,
-                             const uint8_t* from,
+                             uint8_t const* from,
                              size_t from_size) {
   size_t from_idx = 0;
   size_t to_idx = 0;
-  const size_t to_size = MAP_WIDTH * MAP_HEIGHT;
+  size_t const to_size = MAP_WIDTH * MAP_HEIGHT;
   while (to_idx != to_size) {
     if (from_size - from_idx < 1)
       return false;
@@ -262,8 +262,8 @@ static bool uncompress_field(uint8_t* to,
   return true;
 }
 
-Result_LevelPtr LevelMetadata_make_level(const LevelMetadata* self,
-                                         const Ruleset* ruleset) {
+Result_LevelPtr LevelMetadata_make_level(LevelMetadata const* self,
+                                         Ruleset const* ruleset) {
   Level* level = xmalloc(sizeof(Level));
   *level = (Level){.ruleset = ruleset,
                    .chips_left = self->chips_required,

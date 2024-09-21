@@ -1,8 +1,8 @@
 #ifndef LIB_CHIPS_RANDOM_H
 #define LIB_CHIPS_RANDOM_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct Prng {
   uint64_t initial_seed;
@@ -18,4 +18,4 @@ uint8_t Prng_random4(Prng* self);
 void Prng_permute3(Prng* self, void* arr, size_t const size);
 void Prng_permute4(Prng* self, void* arr, size_t const size);
 
-#endif //LIB_CHIPS_RANDOM_H
+#endif  // LIB_CHIPS_RANDOM_H

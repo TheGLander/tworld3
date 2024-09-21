@@ -21,27 +21,27 @@ typedef struct LevelMetadata {
   uint16_t layer_bottom_size;
   uint8_t* layer_bottom;
 } LevelMetadata;
-const char* LevelMetadata_get_title(const LevelMetadata* self);
-uint16_t LevelMetadata_get_level_number(const LevelMetadata* self);
-uint16_t LevelMetadata_get_time_limit(const LevelMetadata* self);
-uint16_t LevelMetadata_get_chips_required(const LevelMetadata* self);
-const char* LevelMetadata_get_password(const LevelMetadata* self);
-const char* LevelMetadata_get_hint(const LevelMetadata* self);
-const char* LevelMetadata_get_author(const LevelMetadata* self);
+char const* LevelMetadata_get_title(LevelMetadata const* self);
+uint16_t LevelMetadata_get_level_number(LevelMetadata const* self);
+uint16_t LevelMetadata_get_time_limit(LevelMetadata const* self);
+uint16_t LevelMetadata_get_chips_required(LevelMetadata const* self);
+char const* LevelMetadata_get_password(LevelMetadata const* self);
+char const* LevelMetadata_get_hint(LevelMetadata const* self);
+char const* LevelMetadata_get_author(LevelMetadata const* self);
 
 typedef Level* LevelPtr;
 DEFINE_RESULT(LevelPtr);
-Result_LevelPtr LevelMetadata_make_level(const LevelMetadata* self,
-                                         const Ruleset* ruleset);
+Result_LevelPtr LevelMetadata_make_level(LevelMetadata const* self,
+                                         Ruleset const* ruleset);
 
 typedef struct LevelSet {
   uint16_t levels_n;
   LevelMetadata levels[];
 } LevelSet;
-uint16_t LevelSet_get_levels_n(const LevelSet* self);
+uint16_t LevelSet_get_levels_n(LevelSet const* self);
 LevelMetadata* LevelSet_get_level(LevelSet* self, uint16_t idx);
 
 typedef LevelSet* LevelSetPtr;
 DEFINE_RESULT(LevelSetPtr);
-Result_LevelSetPtr parse_ccl(const uint8_t* data, size_t data_len);
+Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len);
 void LevelSet_free(LevelSet* self);

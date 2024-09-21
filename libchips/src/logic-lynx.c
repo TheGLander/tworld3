@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "logic.h"
+#include "misc.h"
 
 #define MAX_CREATURES (2 * MAP_WIDTH * MAP_HEIGHT)
 
@@ -118,7 +119,7 @@ static void Level_stop_terrain_sfx(Level* level) {
 }
 
 static bool lynx_init_level(Level* self) {
-  Actor* actors = calloc(MAX_CREATURES + 1, sizeof(Actor));
+  Actor* actors = xcalloc(MAX_CREATURES + 1, sizeof(Actor));
   assert(self->actors != NULL);
   // TODO: Do we actually need to skip the first actor?
   actors += 1;

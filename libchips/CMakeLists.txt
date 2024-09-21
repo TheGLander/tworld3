@@ -8,6 +8,8 @@ list(APPEND libchips_src
   src/logic-lynx.c
   src/logic-ms.c
   src/random.c
+  src/misc.c
+  src/format-ccl.c
 )
 
 # add_executable(libchips-cli ${libchips_src} src/main-cli.c)

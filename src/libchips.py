@@ -74,9 +74,9 @@ ms_logic = Ruleset.from_global_var("ms_logic")
 class Direction(Enum):
     Nil = 0
     North = 1
+    South = 4
     West = 2
-    East = 4
-    South = 8
+    East = 8
 
     def to_idx(self):
         return (0x30210 >> (self.value * 2)) & 3

@@ -6,8 +6,8 @@
 // Sure would be great to have `constexpr` for `TileID_with_dir`
 #define north(id) id
 #define west(id) ((id) | 1)
-#define east(id) ((id) | 2)
-#define south(id) ((id) | 3)
+#define south(id) ((id) | 2)
+#define east(id) ((id) | 3)
 
 char const* LevelMetadata_get_title(LevelMetadata const* self) {
   return self->title;

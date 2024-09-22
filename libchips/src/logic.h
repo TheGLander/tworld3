@@ -137,8 +137,8 @@ enum {
   DIRECTION_NIL = 0,
   DIRECTION_NORTH = 1,
   DIRECTION_WEST = 2,
-  DIRECTION_EAST = 4,
-  DIRECTION_SOUTH = 8,
+  DIRECTION_SOUTH = 4,
+  DIRECTION_EAST = 8,
 };
 typedef uint8_t Direction;
 

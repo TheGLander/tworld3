@@ -24,7 +24,7 @@ from PySide6.QtCore import QPoint
 
 
 def get_libchips_path():
-    cwd = Path(getcwd()) 
+    cwd = Path(getcwd())
     cwd_lib = cwd / "libchips.so"
     if cwd_lib.exists():
         return str(cwd_lib)
@@ -74,11 +74,11 @@ ms_logic = Ruleset.from_global_var("ms_logic")
 class Direction(Enum):
     Nil = 0
     North = 1
-    Northwest = 1|2
-    Northeast = 1|8
+    Northwest = 1 | 2
+    Northeast = 1 | 8
     South = 4
-    Southwest = 4|2
-    Southeast = 4|8
+    Southwest = 4 | 2
+    Southeast = 4 | 8
     West = 2
     East = 8
 
@@ -91,6 +91,7 @@ class Direction(Enum):
 
     def add_dir(self, dir: "Direction") -> "Direction":
         return Direction(self.value | dir.value)
+
     def remove_dir(self, dir: "Direction") -> "Direction":
         return Direction(self.value & ~dir.value)
 
@@ -258,9 +259,9 @@ libchips.Level_get_bottom_terrain.restype = c_uint8
 libchips.Level_get_actor_by_idx.restype = Actor
 libchips.Level_get_game_input.restype = c_uint16
 
+
 class GameInput(int):
     pass
-
 
 
 class Level(c_void_p):
@@ -308,13 +309,14 @@ class Level(c_void_p):
 
     def tick(self):
         libchips.Level_tick(self)
+
     @property
     def game_input(self) -> GameInput:
         return GameInput(libchips.Level_get_game_input(self))
+
     @game_input.setter
     def game_input(self, input: GameInput):
         libchips.Level_set_game_input(self, input)
-
 
     @property
     def actors(self) -> Iterator[Actor]:

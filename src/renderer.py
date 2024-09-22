@@ -1,10 +1,13 @@
-from typing import Optional
+from typing import Callable, Optional
 from PySide6.QtCore import QRect, QRectF
 from PySide6.QtGui import QPaintEvent, QPainter
-from PySide6.QtWidgets import QSizePolicy, QWidget
+from PySide6.QtWidgets import QMainWindow, QSizePolicy, QWidget
+from PySide6.QtOpenGLWidgets import QOpenGLWidget
 
 from libchips import Actor, AnyTileID, Direction, Level, Position
 from tileset import Tileset
+
+GlobalRepaintCallback = Callable[..., None]
 
 
 def scale_rect(src: QRectF, factor: float):
@@ -20,6 +23,8 @@ class LevelRenderer(QWidget):
     tileset: Tileset
     camera: QRect = QRect(11, 15, 9, 9)
     tile_scale: float = 1.0
+    request_global_repaint: Optional[GlobalRepaintCallback] = None
+    auto_draw: bool = True
 
     def __init__(self, tileset: Tileset, parent=None) -> None:
         super().__init__(parent)
@@ -80,5 +85,6 @@ class LevelRenderer(QWidget):
         self.painter.end()
 
     def paintEvent(self, event: QPaintEvent) -> None:
-        event.accept()
         self.draw_viewport()
+        if self.auto_draw and self.request_global_repaint:
+            self.request_global_repaint()

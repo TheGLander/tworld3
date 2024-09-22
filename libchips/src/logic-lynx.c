@@ -928,6 +928,13 @@ static TriRes Actor_enter_tile(Actor* self, Level* level, bool pedantic_idle) {
       if (!pedantic_idle) {
         Level_add_sfx(level, SND_BUTTON_PUSHED);
       }
+    case Exit:
+      if (self->id != Chip)
+        break;
+      self->hidden = true;
+      level->level_complete = true;
+      Level_add_sfx(level, SND_CHIP_WINS);
+      break;
     default:
       break;
   }

@@ -5,10 +5,19 @@ from PySide6.QtGui import QImage, QKeyEvent, QSurfaceFormat, Qt
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
+    QMessageBox,
     QVBoxLayout,
     QWidget,
 )
-from libchips import Direction, GameInput, Level, parse_ccl, ms_logic, lynx_logic
+from libchips import (
+    Direction,
+    GameInput,
+    Level,
+    TriRes,
+    parse_ccl,
+    ms_logic,
+    lynx_logic,
+)
 from tileset import TwMsTileset
 from renderer import LevelRenderer, GlobalRepaintCallback
 
@@ -47,18 +56,22 @@ class MainWindow(QMainWindow):
         self.tick_timer.start(1000 // 20)
 
     def tick_level(self):
-        if not self.level:
+        if not self.level or self.level.win_state != TriRes.Nothing:
             return
         self.level.game_input = GameInput(self.current_input.value)
         self.level.tick()
         self.renderer.level_updated()
+        if self.level.win_state == TriRes.Success:
+            QMessageBox.information(self, "You won!", "ayy!")
+        elif self.level.win_state == TriRes.Died:
+            QMessageBox.warning(self, "You died", "bummer")
 
     def show_example_level(self):
         with open("./CCLP1.dat", "rb") as set_file:
             set_bytes = set_file.read()
         levelset = parse_ccl(set_bytes)
         level_meta = levelset.get_level(2)
-        level = level_meta.make_level(lynx_logic)
+        level = level_meta.make_level(ms_logic)
         self.start_level(level)
 
     current_input: Direction = Direction.Nil
@@ -89,8 +102,6 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
-    surface = QSurfaceFormat()
-    surface.setSwapInterval(1)
     app = QApplication()
     win = MainWindow()
     win.show()

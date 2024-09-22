@@ -1134,7 +1134,6 @@ static void Chip_do_decision(Actor* self, Level* level) {
   Direction move_dir = GameInput_is_directional(level->game_input)
                            ? (Direction)level->game_input
                            : DIRECTION_NIL;
-  printf("chip %d\n", move_dir);
   if (move_dir == DIRECTION_NIL || level->lx_state.chip_stuck)
     can_move = false;
 
@@ -1292,7 +1291,6 @@ static bool Actor_teleport(Actor* self, Level* level) {
 
 static void lynx_tick_level(Level* self) {
   Actor* chip = Level_get_chip(self);
-  printf("chip %d\n", chip->pos);
   if (chip->id == Pushing_Chip) {
     chip->id = Chip;
   }

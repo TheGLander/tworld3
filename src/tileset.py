@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 from libchips import Actor, AnyTileID, Direction, TileID
-from PySide6.QtGui import QImage
-from PySide6.QtCore import QRect
+from PySide6.QtGui import QImage, QPainter, qRgb
+from PySide6.QtCore import QPoint, QRect, Qt
 
 
 class Tileset(ABC):
@@ -150,11 +150,20 @@ for idx, tile in enumerate(ms_tileset_idx_to_tileid_list):
     ms_tileset_tileid_to_pos[tile] = QRect(idx // 16, idx % 16, 1, 1)
 
 
+def apply_mask(image: QImage, mask: QImage) -> QImage:
+    new_image = image.convertToFormat(QImage.Format.Format_ARGB32)
+    new_image.setAlphaChannel(mask)
+    return new_image
+
+
 class TwMsTileset(Tileset):
     def __init__(self, image: QImage) -> None:
         if not self.looks_like_this_tileset(image):
             raise Exception("Invalid tileset image")
-        self.image = image
+        self.image = apply_mask(
+            image,
+            image.createMaskFromColor(qRgb(255, 0, 255), Qt.MaskMode.MaskOutColor),
+        )
         self.tile_size = image.height() // 16
 
     @staticmethod

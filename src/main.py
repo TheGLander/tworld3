@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 from typing import Optional
-from PySide6.QtCore import QEnum, QEvent, QRect, QTimer
+from PySide6.QtCore import QTimer
 from PySide6.QtGui import QImage, QKeyEvent, QSurfaceFormat, Qt
 from PySide6.QtWidgets import (
     QApplication,
-    QDialog,
     QMainWindow,
     QVBoxLayout,
     QWidget,
 )
-from libchips import Direction, GameInput, Level, TriRes, parse_ccl, ms_logic, lynx_logic
+from libchips import Direction, GameInput, Level, parse_ccl, ms_logic, lynx_logic
 from tileset import TwMsTileset
 from renderer import LevelRenderer, GlobalRepaintCallback
 

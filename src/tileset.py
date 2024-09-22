@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict
 from libchips import Actor, AnyTileID, Direction, TileID
-from PySide6.QtGui import QImage, QPainter, qRgb
-from PySide6.QtCore import QPoint, QRect, Qt
+from PySide6.QtGui import QImage, qRgb
+from PySide6.QtCore import QRect, Qt
 
 
 class Tileset(ABC):

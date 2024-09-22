@@ -3,10 +3,9 @@ from time import monotonic as now
 
 from PySide6.QtCore import QPointF, QRect, QRectF, QSize
 from PySide6.QtGui import QPaintEvent, QPainter
-from PySide6.QtWidgets import QMainWindow, QSizePolicy, QWidget
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from PySide6.QtWidgets import QSizePolicy, QWidget
 
-from libchips import Actor, AnyTileID, Direction, Level, Position
+from libchips import Actor, AnyTileID, Level, Position
 from tileset import Tileset
 
 GlobalRepaintCallback = Callable[..., None]

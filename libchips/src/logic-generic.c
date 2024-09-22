@@ -202,3 +202,7 @@ GameInput Level_get_game_input(Level const* self) {
 void Level_set_game_input(Level* self, GameInput game_input) {
   self->game_input = game_input;
 }
+
+TriRes Level_get_win_state(Level const* self) {
+  return self->win_state;
+};

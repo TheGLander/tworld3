@@ -276,6 +276,9 @@ typedef struct Ruleset {
 } Ruleset;
 RulesetID Ruleset_get_id(const Ruleset* self);
 
+enum { TRIRES_DIED = -1, TRIRES_NOTHING = 0, TRIRES_SUCCESS = 1 };
+typedef int8_t TriRes;
+
 typedef struct Level {
   // `game`?
   Ruleset const* ruleset;
@@ -300,6 +303,7 @@ typedef struct Level {
   ConnList cloner_connections;
   MapCell map[MAP_WIDTH * MAP_HEIGHT];
   bool level_complete;
+  TriRes win_state;
   union {
     MsState ms_state;
     LxState lx_state;
@@ -324,6 +328,7 @@ uint8_t* Level_player_item_ptr(Level* self, TileID id);
 bool Level_player_has_item(Level const* self, TileID id);
 void Level_set_game_input(Level* self, GameInput game_input);
 GameInput Level_get_game_input(Level const* self);
+TriRes Level_get_win_state(Level const* self);
 
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,

@@ -277,11 +277,16 @@ libchips.Level_get_top_terrain.restype = c_uint8
 libchips.Level_get_bottom_terrain.restype = c_uint8
 libchips.Level_get_actor_by_idx.restype = Actor
 libchips.Level_get_game_input.restype = c_uint16
+libchips.Level_get_win_state.restype = c_int8
 
 
 class GameInput(int):
     pass
 
+class TriRes(Enum):
+    Died = -1
+    Nothing = 0
+    Success = 1
 
 class Level(c_void_p):
     @property
@@ -314,6 +319,10 @@ class Level(c_void_p):
     @property
     def sfx(self) -> int:
         return libchips.Level_get_sfx(self)
+
+    @property
+    def win_state(self) -> TriRes:
+        return TriRes(libchips.Level_get_win_state(self))
 
     def get_top_terrain(self, pos: Position) -> AnyTileID:
         return TileID.from_libchips(libchips.Level_get_top_terrain(self, pos.to_int()))

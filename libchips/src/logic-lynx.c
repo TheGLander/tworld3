@@ -217,7 +217,7 @@ static bool lynx_init_level(Level* self) {
   memset(self->player_boots, 0, sizeof(self->player_boots));
   memset(self->player_keys, 0, sizeof(self->player_keys));
   self->lx_state = (LxState){
-    .last_actor=self->lx_state.last_actor,
+      .last_actor = self->lx_state.last_actor,
       .pedantic_mode = self->lx_state.pedantic_mode,
       .chip_stuck = self->lx_state.pedantic_mode &&
                     chip->pos != POSITION_NULL &&
@@ -557,13 +557,6 @@ static bool Actor_check_collision(Actor const* self,
   return true;
 }
 
-enum {
-  TRIRES_DIED = -1,
-  TRIRES_FAILED = 0,
-  TRIRES_SUCCESS = +1,
-};
-typedef int8_t TriRes;
-
 static TriRes Actor_start_moving_to(Actor* self, Level* level, bool releasing) {
   assert(!Actor_is_moving(self));
   Direction move_dir;
@@ -572,7 +565,7 @@ static TriRes Actor_start_moving_to(Actor* self, Level* level, bool releasing) {
   } else if (Actor_get_forced_move(self)) {
     move_dir = Actor_get_forced_move(self);
   } else {
-    return TRIRES_FAILED;
+    return TRIRES_NOTHING;
   }
   assert(!Direction_is_diagonal(move_dir));
   self->direction = move_dir;
@@ -605,7 +598,7 @@ static TriRes Actor_start_moving_to(Actor* self, Level* level, bool releasing) {
       self->direction =
           get_ice_wall_turn_dir(from_terrain, Direction_back(self->direction));
     }
-    return TRIRES_FAILED;
+    return TRIRES_NOTHING;
   }
 
   if (level->lx_state.map_breached && (Level_get_chip(level)->id == Chip)) {
@@ -736,7 +729,7 @@ static bool Level_activate_cloner(Level* self, Position pos) {
 
   // This can only happen if we ran out of actors. Whoops?
   if (!clone)
-    return Actor_advance_movement(actor, self, true) != TRIRES_FAILED;
+    return Actor_advance_movement(actor, self, true) != TRIRES_NOTHING;
 
   // Actually clone the actor
   *clone = *actor;
@@ -998,15 +991,16 @@ static TriRes Actor_advance_movement(Actor* self,
     if (start_res != TRIRES_DIED) {
       self->hidden = false;
     }
-    if (level->lx_state.pedantic_mode && start_res == TRIRES_FAILED &&
+    if (level->lx_state.pedantic_mode && start_res == TRIRES_NOTHING &&
         Actor_enter_tile(self, level, true) != TRIRES_DIED)
       return TRIRES_DIED;
-    if (start_res == TRIRES_DIED) return TRIRES_DIED;
-    if (start_res == TRIRES_FAILED) {
+    if (start_res == TRIRES_DIED)
+      return TRIRES_DIED;
+    if (start_res == TRIRES_NOTHING) {
       if (releasing) {
         self->move_decision = previous_releasing_dir;
       }
-      return TRIRES_FAILED;
+      return TRIRES_NOTHING;
     }
   }
   if (Actor_reduce_cooldown(self, level))
@@ -1435,6 +1429,7 @@ static void lynx_tick_level(Level* self) {
     if (self->lx_state.endgame_timer == 0) {
       Level_stop_terrain_sfx(self);
       Level_stop_sfx(self, SND_BLOCK_MOVING);
+      self->win_state = self->level_complete ? TRIRES_SUCCESS : TRIRES_DIED;
     }
   }
 }

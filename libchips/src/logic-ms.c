@@ -242,22 +242,20 @@ static inline bool Level_cancel_mouse_goal(Level* self) {
   return true;
 }
 
-enum {
-  TRIRES_DIED = -1,
-  TRIRES_NOTHING = 0,
-  TRIRES_SUCCESS = +1,
-};
-typedef int8_t TriRes;
 /* Return TRIRES_DIED or TRIRES_SUCCESS if gameplay is over.
  */
 static TriRes Level_check_for_ending(Level* self) {
   if (self->ms_state.chip_status != CHIP_OKAY &&
-      self->ms_state.chip_status != CHIP_SQUISHED) {
-    Level_add_sfx(self, SND_CHIP_LOSES); /* Squish patch */
+      self->ms_state.chip_status != CHIP_SQUISHED) { /* Squish patch */
+    if (self->win_state != TRIRES_DIED) {
+      Level_add_sfx(self, SND_CHIP_LOSES);
+    }
     return TRIRES_DIED;
   }
   if (self->level_complete) {
-    Level_add_sfx(self, SND_CHIP_WINS);
+    if (self->win_state != TRIRES_SUCCESS) {
+      Level_add_sfx(self, SND_CHIP_WINS);
+    }
     return TRIRES_SUCCESS;
   }
   return TRIRES_NOTHING;
@@ -2102,6 +2100,7 @@ static void ms_tick_level(Level* self) {
   }
   Level_update_sliplist(self);
   Level_create_clones(self);
+  self->win_state = Level_check_for_ending(self);
 }
 
 Ruleset const ms_logic = {.id = Ruleset_MS,

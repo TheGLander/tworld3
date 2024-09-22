@@ -217,6 +217,7 @@ static bool lynx_init_level(Level* self) {
   memset(self->player_boots, 0, sizeof(self->player_boots));
   memset(self->player_keys, 0, sizeof(self->player_keys));
   self->lx_state = (LxState){
+    .last_actor=self->lx_state.last_actor,
       .pedantic_mode = self->lx_state.pedantic_mode,
       .chip_stuck = self->lx_state.pedantic_mode &&
                     chip->pos != POSITION_NULL &&
@@ -943,13 +944,13 @@ static TriRes Actor_enter_tile(Actor* self, Level* level, bool pedantic_idle) {
 /**
  * Returns `true` if the actor has still cooldown to go
  */
-static TriRes Actor_reduce_cooldown(Actor* self, Level const* level) {
+static bool Actor_reduce_cooldown(Actor* self, Level const* level) {
   if (TileID_is_animation(self->id))
-    return TRIRES_SUCCESS;
+    return true;
   assert(self->move_cooldown > 0);
 
   if (self->id == Chip && level->lx_state.chip_stuck)
-    return TRIRES_SUCCESS;
+    return true;
 
   uint8_t speed = 2;
   if (self->id == Blob) {
@@ -1000,8 +1001,15 @@ static TriRes Actor_advance_movement(Actor* self,
     if (level->lx_state.pedantic_mode && start_res == TRIRES_FAILED &&
         Actor_enter_tile(self, level, true) != TRIRES_DIED)
       return TRIRES_DIED;
+    if (start_res == TRIRES_DIED) return TRIRES_DIED;
+    if (start_res == TRIRES_FAILED) {
+      if (releasing) {
+        self->move_decision = previous_releasing_dir;
+      }
+      return TRIRES_FAILED;
+    }
   }
-  if (Actor_reduce_cooldown(self, level) == TRIRES_SUCCESS)
+  if (Actor_reduce_cooldown(self, level))
     return TRIRES_SUCCESS;
   return Actor_enter_tile(self, level, false);
 }

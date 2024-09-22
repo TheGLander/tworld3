@@ -61,7 +61,7 @@ Position Position_neighbor(Position self, Direction dir) {
 }
 
 bool GameInput_is_directional(GameInput self) {
-  return GAME_INPUT_DIR_MOVE_FIRST < self && self < GAME_INPUT_DIR_MOVE_LAST;
+  return GAME_INPUT_DIR_MOVE_FIRST <= self && self <= GAME_INPUT_DIR_MOVE_LAST;
 }
 
 bool Direction_is_diagonal(Direction dir) {

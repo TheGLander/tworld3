@@ -191,5 +191,14 @@ void Level_free(Level* self) {
 }
 
 void Level_tick(Level* self) {
+  self->sfx &= ~((1 << SND_ONESHOT_COUNT) - 1);
   self->ruleset->tick_level(self);
+  self->current_tick += 1;
+}
+
+GameInput Level_get_game_input(Level const* self) {
+  return self->game_input;
+}
+void Level_set_game_input(Level* self, GameInput game_input) {
+  self->game_input = game_input;
 }

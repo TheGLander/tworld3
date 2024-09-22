@@ -189,12 +189,12 @@ typedef struct Actor {
   uint16_t state;
   Direction move_decision;
 } Actor;
-Position Actor_get_position(const Actor* actor);
-TileID Actor_get_id(const Actor* actor);
-Direction Actor_get_direction(const Actor* actor);
-int8_t Actor_get_move_cooldown(const Actor* actor);
-int8_t Actor_get_animation_frame(const Actor* actor);
-bool Actor_get_hidden(const Actor* actor);
+Position Actor_get_position(Actor const* actor);
+TileID Actor_get_id(Actor const* actor);
+Direction Actor_get_direction(Actor const* actor);
+int8_t Actor_get_move_cooldown(Actor const* actor);
+int8_t Actor_get_animation_frame(Actor const* actor);
+bool Actor_get_hidden(Actor const* actor);
 
 typedef struct TileConn {
   Position from;
@@ -278,7 +278,7 @@ RulesetID Ruleset_get_id(const Ruleset* self);
 
 typedef struct Level {
   // `game`?
-  const Ruleset* ruleset;
+  Ruleset const* ruleset;
   // `replay`?
   int8_t timer_offset;
   uint32_t time_limit;
@@ -306,22 +306,24 @@ typedef struct Level {
   };
 } Level;
 
-const Ruleset* Level_get_ruleset(const Level* self);
-int8_t Level_get_time_offset(const Level* self);
-uint32_t Level_get_time_limit(const Level* self);
-uint32_t Level_get_current_tick(const Level* self);
-uint32_t Level_get_chips_left(const Level* self);
+const Ruleset* Level_get_ruleset(Level const* self);
+int8_t Level_get_time_offset(Level const* self);
+uint32_t Level_get_time_limit(Level const* self);
+uint32_t Level_get_current_tick(Level const* self);
+uint32_t Level_get_chips_left(Level const* self);
 uint8_t* Level_get_player_keys(Level* self);
 uint8_t* Level_get_player_boots(Level* self);
-uint16_t Level_get_status_flags(const Level* self);
-uint32_t Level_get_sfx(const Level* self);
+uint16_t Level_get_status_flags(Level const* self);
+uint32_t Level_get_sfx(Level const* self);
 Prng* Level_get_prng_ptr(Level* self);
-TileID Level_get_top_terrain(const Level* self, Position pos);
-TileID Level_get_bottom_terrain(const Level* self, Position pos);
-Actor* Level_get_actors_ptr(const Level* self);
-Actor* Level_get_actor_by_idx(const Level* self, uint32_t idx);
-uint8_t* Level_player_item_ptr(Level* level, TileID id);
-bool Level_player_has_item(const Level* level, TileID id);
+TileID Level_get_top_terrain(Level const* self, Position pos);
+TileID Level_get_bottom_terrain(Level const* self, Position pos);
+Actor* Level_get_actors_ptr(Level const* self);
+Actor* Level_get_actor_by_idx(Level const* self, uint32_t idx);
+uint8_t* Level_player_item_ptr(Level* self, TileID id);
+bool Level_player_has_item(Level const* self, TileID id);
+void Level_set_game_input(Level* self, GameInput game_input);
+GameInput Level_get_game_input(Level const* self);
 
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,
@@ -369,7 +371,7 @@ enum StateFlags {
   SF_SHUTTERRED = 0x20,
 };
 
-extern const Ruleset lynx_logic;
-extern const Ruleset ms_logic;
+extern Ruleset const lynx_logic;
+extern Ruleset const ms_logic;
 
 #endif  // LIB_CHIPS_LOGIC_H

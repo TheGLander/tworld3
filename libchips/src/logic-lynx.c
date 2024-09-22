@@ -319,20 +319,27 @@ static Direction Slide_get_forced_direction(TileID self,
   }
 }
 
-static Direction Ice_get_turned_dir(TileID self, Direction dir) {
-  if (self == Ice)
-    return Direction_back(dir);
-  Direction vert_dir = self == IceWall_Southwest || self == IceWall_Southeast
-                           ? DIRECTION_SOUTH
-                           : DIRECTION_NORTH;
-  Direction horiz_dir = self == IceWall_Southwest || self == IceWall_Northwest
-                            ? DIRECTION_WEST
-                            : DIRECTION_EAST;
-  if (dir == vert_dir)
-    return Direction_back(horiz_dir);
-  if (dir == horiz_dir)
-    return Direction_back(vert_dir);
-  return dir;
+static Direction get_ice_wall_turn_dir(TileID floor, Direction dir) {
+  switch (floor) {
+    case IceWall_Northeast:
+      return dir == DIRECTION_SOUTH  ? DIRECTION_EAST
+             : dir == DIRECTION_WEST ? DIRECTION_NORTH
+                                     : dir;
+    case IceWall_Southwest:
+      return dir == DIRECTION_NORTH  ? DIRECTION_WEST
+             : dir == DIRECTION_EAST ? DIRECTION_SOUTH
+                                     : dir;
+    case IceWall_Northwest:
+      return dir == DIRECTION_SOUTH  ? DIRECTION_WEST
+             : dir == DIRECTION_EAST ? DIRECTION_NORTH
+                                     : dir;
+    case IceWall_Southeast:
+      return dir == DIRECTION_NORTH  ? DIRECTION_EAST
+             : dir == DIRECTION_WEST ? DIRECTION_SOUTH
+                                     : dir;
+    default:
+      return dir;
+  }
 }
 
 static Direction Actor_calculate_forced_move(Actor* self, Level* level) {
@@ -594,7 +601,8 @@ static TriRes Actor_start_moving_to(Actor* self, Level* level, bool releasing) {
     // If we bonked while on ice, turn around
     if (TileID_is_ice(from_terrain) &&
         !(self->id == Chip && Level_player_has_item(level, Boots_Ice))) {
-      self->direction = Ice_get_turned_dir(from_terrain, self->direction);
+      self->direction =
+          get_ice_wall_turn_dir(from_terrain, Direction_back(self->direction));
     }
     return TRIRES_FAILED;
   }
@@ -659,8 +667,277 @@ static TriRes Actor_start_moving_to(Actor* self, Level* level, bool releasing) {
   return TRIRES_SUCCESS;
 }
 
+static Position Level_find_connected_cell(Level const* self,
+                                          Position from_pos,
+                                          TileID target_id,
+                                          ConnList* list) {
+  // In pedantic mode, connections can only be in reading order, so search
+  // manually instead of relying on the list
+  if (self->lx_state.pedantic_mode) {
+    for (uint16_t offset = 1; offset < MAP_WIDTH * MAP_HEIGHT; offset += 1) {
+      Position searched_pos = (from_pos + offset) % (MAP_WIDTH * MAP_HEIGHT);
+      TileID terrain = Level_get_terrain(self, searched_pos);
+      if (terrain == target_id) {
+        return searched_pos;
+      }
+    }
+    return POSITION_NULL;
+  }
+  // In the usual mode, scan the conn list
+  for (size_t idx = 0; idx < list->length; idx += 1) {
+    TileConn conn = list->items[idx];
+    if (conn.from == from_pos)
+      return conn.to;
+  }
+  return POSITION_NULL;
+}
+
+static TriRes Actor_advance_movement(Actor* self, Level* level, bool releasing);
+
+static Actor* Actor_new(Level* level) {
+  Actor* actor = level->actors + 1;
+  for (; actor->id != Nothing; actor += 1) {
+    if (actor->hidden)
+      return actor;
+  }
+
+  size_t actors_used = actor - level->actors;
+  if (actors_used >= MAX_CREATURES) {
+    warn("Ran out of room in the creatures array!");
+    return NULL;
+  }
+  if (level->lx_state.pedantic_mode && actors_used >= PEDANTIC_MAX_CREATURES)
+    return NULL;
+
+  actor->hidden = true;
+  Actor* new_last_actor = actor + 1;
+  actor->id = Nothing;
+  level->lx_state.last_actor = new_last_actor;
+  return actor;
+}
+
+static bool Level_activate_cloner(Level* self, Position pos) {
+  assert(pos != POSITION_NULL);
+  if (pos >= MAP_WIDTH * MAP_HEIGHT) {
+    warn("Off-map cloning attempted: (%d %d)", pos % MAP_WIDTH,
+         pos / MAP_WIDTH);
+    return false;
+  }
+  if (Level_get_terrain(self, pos) != CloneMachine) {
+    warn("Red button not connected to a clone machine at (%d %d)",
+         pos % MAP_WIDTH, pos / MAP_WIDTH);
+    return false;
+  }
+  Actor* actor = Level_find_actor(self, pos, 0);
+  if (!actor)
+    return false;
+  Actor* clone = Actor_new(self);
+
+  // This can only happen if we ran out of actors. Whoops?
+  if (!clone)
+    return Actor_advance_movement(actor, self, true) != TRIRES_FAILED;
+
+  // Actually clone the actor
+  *clone = *actor;
+
+  if (Actor_advance_movement(actor, self, true) != TRIRES_SUCCESS) {
+    // We failed to exit, don't actually show the clone, then
+    clone->hidden = true;
+    return false;
+  }
+  return true;
+}
+
+static void Level_turn_tanks(Level* self) {
+  for (Actor* actor = self->actors; actor->id != Nothing; actor += 1) {
+    if (actor->hidden || actor->id != Tank)
+      continue;
+    TileID terrain = Level_get_terrain(self, actor->pos);
+    if (terrain == CloneMachine || TileID_is_ice(terrain))
+      continue;
+    actor->state ^= CS_REVERSE;
+  }
+}
+
 static TriRes Actor_enter_tile(Actor* self, Level* level, bool pedantic_idle) {
-  // TODO: INCOMPLETE!!!
+  assert(!(pedantic_idle && !level->lx_state.pedantic_mode));
+  if (TileID_is_animation(self->id))
+    return true;
+  assert(self->move_cooldown <= 0);
+
+  TileID terrain = Level_get_terrain(level, self->pos);
+
+  if (self->id == Chip && level->lx_state.to_place_wall_pos != POSITION_NULL)
+    return true;
+
+  if (self->id == Chip) {
+    if (level->lx_state.to_place_wall_pos != POSITION_NULL)
+      return true;
+    if (!Level_player_has_item(level, Boots_Ice)) {
+      self->direction = get_ice_wall_turn_dir(terrain, self->direction);
+    }
+  } else {
+    if (!pedantic_idle) {
+      self->direction = get_ice_wall_turn_dir(terrain, self->direction);
+    }
+  }
+
+  switch (terrain) {
+    case Water:
+      if (self->id == Glider ||
+          (self->id == Chip && Level_player_has_item(level, Boots_Water))) {
+        // We survive, yay!
+        break;
+      } else {
+        // Drown
+        if (self->id == Block) {
+          Level_set_terrain(level, self->pos, Dirt);
+        }
+        if (self->id == Chip) {
+          Level_remove_chip(level, CHIP_DROWNED, NULL);
+        } else {
+          Actor_remove(self, level, Water_Splash);
+        }
+        return TRIRES_DIED;
+      }
+    case Fire:
+      if (pedantic_idle)
+        break;
+      if (self->id == Chip && !Level_player_has_item(level, Boots_Fire)) {
+        Level_remove_chip(level, CHIP_BURNED, NULL);
+        return TRIRES_DIED;
+      }
+      break;
+    case Dirt:
+    case BlueWall_Fake:
+      Level_set_terrain(level, self->pos, Empty);
+      if (self->id == Chip) {
+        // Only play the SFX if we're Chip
+        Level_add_sfx(level, SND_TILE_EMPTIED);
+      }
+      break;
+    case PopupWall:
+      if (self->id == Chip) {
+        Level_set_terrain(level, self->pos, Wall);
+        Level_add_sfx(level, SND_WALL_CREATED);
+      }
+      break;
+    case Door_Red:
+    case Door_Green:
+    case Door_Blue:
+    case Door_Yellow: {
+      Level_set_terrain(level, self->pos, Empty);
+      if (self->id == Chip) {
+        uint8_t* item_ptr = Level_player_item_ptr(level, terrain);
+        if (terrain != Door_Green && *item_ptr > 0) {
+          *item_ptr -= 1;
+        }
+        Level_add_sfx(level, SND_DOOR_OPENED);
+      }
+      break;
+    }
+    case Key_Blue:
+      Level_set_terrain(level, self->pos, Empty);
+      [[fallthrough]];
+    case Key_Red:
+    case Key_Green:
+    case Key_Yellow: {
+      if (self->id != Chip)
+        break;
+      Level_add_sfx(level, SND_ITEM_COLLECTED);
+      Level_set_terrain(level, self->pos, Empty);
+      uint8_t* item_ptr = Level_player_item_ptr(level, terrain);
+      if (*item_ptr == 255) {
+        *item_ptr = 0;
+      } else {
+        *item_ptr += 1;
+      }
+      break;
+    }
+    case Boots_Ice:
+    case Boots_Slide:
+    case Boots_Fire:
+    case Boots_Water: {
+      if (self->id != Chip)
+        break;
+      Level_set_terrain(level, self->pos, Empty);
+      uint8_t* item_ptr = Level_player_item_ptr(level, terrain);
+      *item_ptr = 1;
+      Level_add_sfx(level, SND_ITEM_COLLECTED);
+      break;
+    }
+    case Burglar:
+      if (self->id != Chip)
+        break;
+      *Level_player_item_ptr(level, Boots_Ice) = 0;
+      *Level_player_item_ptr(level, Boots_Slide) = 0;
+      *Level_player_item_ptr(level, Boots_Fire) = 0;
+      *Level_player_item_ptr(level, Boots_Water) = 0;
+      Level_add_sfx(level, SND_BOOTS_STOLEN);
+      break;
+    case ICChip:
+      if (pedantic_idle || self->id != Chip)
+        break;
+      Level_set_terrain(level, self->pos, Empty);
+      if (level->chips_left > 0) {
+        level->chips_left -= 1;
+      }
+      Level_add_sfx(level, SND_IC_COLLECTED);
+      break;
+    case Socket:
+      Level_set_terrain(level, self->pos, Empty);
+      if (self->id == Chip) {
+        Level_add_sfx(level, SND_SOCKET_OPENED);
+      }
+      break;
+    case Bomb:
+      if (pedantic_idle)
+        break;
+      Level_set_terrain(level, self->pos, Empty);
+      if (self->id == Chip) {
+        Level_remove_chip(level, CHIP_BOMBED, NULL);
+      } else {
+        Level_add_sfx(level, SND_BOMB_EXPLODES);
+        Actor_remove(self, level, Bomb_Explosion);
+      }
+      return TRIRES_DIED;
+    case Beartrap:
+      if (!pedantic_idle) {
+        Level_add_sfx(level, SND_TRAP_ENTERED);
+      }
+      break;
+    case Button_Blue:
+      if (!pedantic_idle) {
+        Level_turn_tanks(level);
+        Level_add_sfx(level, SND_BUTTON_PUSHED);
+      }
+      break;
+    case Button_Green:
+      if (!pedantic_idle) {
+        level->lx_state.toggle_walls_xor ^= SwitchWall_Open ^ SwitchWall_Closed;
+        Level_add_sfx(level, SND_BUTTON_PUSHED);
+      }
+      break;
+    case Button_Red:
+      if (!pedantic_idle) {
+        Position connected_cell_pos = Level_find_connected_cell(
+            level, self->pos, CloneMachine, &level->cloner_connections);
+        if (connected_cell_pos != POSITION_NULL) {
+          bool clone_success = Level_activate_cloner(level, connected_cell_pos);
+          if (clone_success) {
+            Level_add_sfx(level, SND_BUTTON_PUSHED);
+          }
+        }
+      }
+      break;
+    case Button_Brown:
+      if (!pedantic_idle) {
+        Level_add_sfx(level, SND_BUTTON_PUSHED);
+      }
+    default:
+      break;
+  }
+  return TRIRES_SUCCESS;
 }
 
 /**
@@ -857,6 +1134,7 @@ static void Chip_do_decision(Actor* self, Level* level) {
   Direction move_dir = GameInput_is_directional(level->game_input)
                            ? (Direction)level->game_input
                            : DIRECTION_NIL;
+  printf("chip %d\n", move_dir);
   if (move_dir == DIRECTION_NIL || level->lx_state.chip_stuck)
     can_move = false;
 
@@ -948,31 +1226,6 @@ static void Actor_do_decision(Actor* self, Level* level) {
   }
 }
 
-static Position Level_find_connected_cell(Level const* self,
-                                          Position from_pos,
-                                          TileID target_id,
-                                          ConnList* list) {
-  // In pedantic mode, connections can only be in reading order, so search
-  // manually instead of relying on the list
-  if (self->lx_state.pedantic_mode) {
-    for (uint16_t offset = 1; offset < MAP_WIDTH * MAP_HEIGHT; offset += 1) {
-      Position searched_pos = (from_pos + offset) % (MAP_WIDTH * MAP_HEIGHT);
-      TileID terrain = Level_get_terrain(self, searched_pos);
-      if (terrain == target_id) {
-        return searched_pos;
-      }
-    }
-    return POSITION_NULL;
-  }
-  // In the usual mode, scan the conn list
-  for (size_t idx = 0; idx < list->length; idx += 1) {
-    TileConn conn = list->items[idx];
-    if (conn.from == from_pos)
-      return conn.to;
-  }
-  return POSITION_NULL;
-}
-
 static void Level_activate_trap(Level* self, Position pos) {
   assert(pos != POSITION_NULL);
   if (Level_get_terrain(self, pos) != Beartrap) {
@@ -988,7 +1241,7 @@ static void Level_activate_trap(Level* self, Position pos) {
 /*
  * Teleport ourselves to the next valid teleport in reverse reading order
  */
-static void Actor_teleport(Actor* self, Level* level) {
+static bool Actor_teleport(Actor* self, Level* level) {
   Position start_pos = self->pos;
   Position checked_pos = start_pos;
   Actor* chip = Level_get_chip(level);
@@ -1008,6 +1261,17 @@ static void Actor_teleport(Actor* self, Level* level) {
         Level_cell_remove_claim(level, self->pos);
       }
       self->pos = checked_pos;
+      if (!Level_cell_has_claim(level, checked_pos) &&
+          Actor_check_collision(self, level, self->direction, 0))
+        break;
+      if (checked_pos == start_pos) {
+        if (self->id == Chip) {
+          level->lx_state.chip_stuck = true;
+        } else {
+          Level_cell_add_claim(level, self->pos);
+        }
+        return false;
+      }
     } else if (Level_cell_ever_had_teleport(level, checked_pos)) {
       // Pedantic Lynx only: if there was a teleport on this cell, but due to a
       // monster standing on a recessed wall, it was overwritten
@@ -1017,11 +1281,18 @@ static void Actor_teleport(Actor* self, Level* level) {
       }
     }
   }
-  // TODO: INCOMPLETE!!! (POSSIBLY, PLEASE CHECK)
+  if (self->id == Chip) {
+    Level_add_sfx(level, SND_TELEPORTING);
+  } else {
+    Level_cell_add_claim(level, self->pos);
+  }
+  self->state |= CS_TELEPORTED;
+  return true;
 }
 
 static void lynx_tick_level(Level* self) {
   Actor* chip = Level_get_chip(self);
+  printf("chip %d\n", chip->pos);
   if (chip->id == Pushing_Chip) {
     chip->id = Chip;
   }
@@ -1082,10 +1353,10 @@ static void lynx_tick_level(Level* self) {
     actor->move_decision = DIRECTION_NIL;
     Actor_set_forced_move(actor, DIRECTION_NIL);
     TileID terrain = Level_get_terrain(self, actor->pos);
-    // In pedantic Lynx, the last actor on a popup wall decides which popup wall
-    // is actually, well, popped
+    // In pedantic Lynx, if there's an actor on a recessed wall, the terrain
+    // under chip is replaced with a wall
     if (actor != chip && self->lx_state.pedantic_mode && terrain == PopupWall) {
-      self->lx_state.to_place_wall_pos = actor->pos;
+      self->lx_state.to_place_wall_pos = chip->pos;
     }
     // We also activate traps at this point
     if (terrain == Button_Brown && !Actor_is_moving(actor)) {
@@ -1106,7 +1377,60 @@ static void lynx_tick_level(Level* self) {
       continue;
     Actor_teleport(actor, self);
   }
-  // TODO: INCOMPLETE!!!
+  // Pedantic Lynx only: put down the wall at the position Chip was at
+  if (self->lx_state.to_place_wall_pos != POSITION_NULL) {
+    if (!chip->hidden) {
+      TileID terrain = Level_get_terrain(self, chip->pos);
+      if (terrain == Beartrap) {
+        Level_activate_trap(self, chip->pos);
+      }
+      Level_set_terrain(self, self->lx_state.to_place_wall_pos, Wall);
+    }
+    self->lx_state.to_place_wall_pos = POSITION_NULL;
+  }
+  // Choose terrain SFX and stuff
+  if (!chip->hidden) {
+    TileID terrain = Level_get_terrain(self, chip->pos);
+    if (terrain == HintButton && chip->move_cooldown <= 0) {
+      self->status_flags |= SF_SHOW_HINT;
+    } else {
+      self->status_flags &= ~SF_SHOW_HINT;
+    }
+    if (chip->id == Chip && self->lx_state.chip_pushing) {
+      chip->id = Pushing_Chip;
+    }
+    if (chip->move_cooldown) {
+      Level_stop_terrain_sfx(self);
+      if (terrain == Fire && Level_player_has_item(self, Boots_Fire))
+        Level_add_sfx(self, SND_FIREWALKING);
+      else if (terrain == Water && Level_player_has_item(self, Boots_Water))
+        Level_add_sfx(self, SND_WATERWALKING);
+      else if (TileID_is_ice(terrain)) {
+        if (Level_player_has_item(self, Boots_Ice))
+          Level_add_sfx(self, SND_ICEWALKING);
+        else if (terrain == Ice)
+          Level_add_sfx(self, SND_SKATING_FORWARD);
+        else
+          Level_add_sfx(self, SND_SKATING_TURN);
+      } else if (TileID_is_slide(terrain)) {
+        if (Level_player_has_item(self, Boots_Slide))
+          Level_add_sfx(self, SND_SLIDEWALKING);
+        else
+          Level_add_sfx(self, SND_SLIDING);
+      }
+    }
+    if (self->lx_state.chip_stuck && TileID_is_ice(terrain)) {
+      Level_add_sfx(self, SND_SKATING_FORWARD);
+    }
+  }
+  if (self->lx_state.endgame_timer) {
+    self->timer_offset -= 1;
+    self->lx_state.endgame_timer -= 1;
+    if (self->lx_state.endgame_timer == 0) {
+      Level_stop_terrain_sfx(self);
+      Level_stop_sfx(self, SND_BLOCK_MOVING);
+    }
+  }
 }
 static void lynx_uninit_level(Level* level) {
   free(level->actors);

@@ -1072,7 +1072,8 @@ static void Actor_choose_move_creature(Actor* self, Level* level) {
         self->move_decision = level->ms_state.controller_dir;
         return;
       default:
-        warn("%d: Non-creature %02X trying to move", level->current_tick,
+        warn("%d: Non-creature %02X at (%d, %d) trying to move",
+             level->current_tick, self->pos % MAP_WIDTH, self->pos / MAP_WIDTH,
              self->id);
         break;
     }
@@ -1144,7 +1145,8 @@ static void Actor_choose_move_creature(Actor* self, Level* level) {
         pdir = choices[2] = choices[0];
         break;
       default:
-        warn("%d: Non-creature %02X trying to move", level->current_tick,
+        warn("%d: Non-creature %02X at (%d, %d) trying to move",
+             level->current_tick, self->pos % MAP_WIDTH, self->pos / MAP_WIDTH,
              self->id);
         // _assert(!"Unknown creature trying to move");
         break;
@@ -1976,6 +1978,7 @@ static bool ms_init_level(Level* self) {
            pos / MAP_WIDTH);
       continue;
     }
+    cell = Level_get_map_cell(self, pos);
     TileID top_id = Level_cell_get_top_floor(self, pos);
     TileID bottom_id = Level_cell_get_bottom_floor(self, pos);
     if (!TileID_is_actor(top_id)) {
@@ -2016,6 +2019,7 @@ static bool ms_init_level(Level* self) {
       Level_spring_trap(self, traps->items[n].from);
     }
   }
+
   return true;
 }
 

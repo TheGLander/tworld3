@@ -192,6 +192,7 @@ Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len) {
       } else if (chunk_type == CCL_CHUNK_MONSTER_LIST) {
         uint8_t monsters_n = chunk_len / 2;
         meta->monster_list = xmalloc(monsters_n * sizeof(Position));
+        meta->monsters_n = monsters_n;
         for (uint8_t monster_idx = 0; monster_idx < monsters_n;
              monster_idx += 1) {
           uint8_t monster_x = data[monster_idx * 2];
@@ -277,6 +278,7 @@ Result_LevelPtr LevelMetadata_make_level(LevelMetadata const* self,
   if (self->monster_list) {
     memcpy(level->ms_state.init_actor_list, self->monster_list,
            self->monsters_n * sizeof(Position));
+    level->ms_state.init_actors_n = self->monsters_n;
   }
   uint8_t uncompressed_field[MAP_WIDTH * MAP_HEIGHT];
   if (!uncompress_field(uncompressed_field, self->layer_top,

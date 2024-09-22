@@ -51,15 +51,13 @@ class MainWindow(QMainWindow):
             return
         self.level.game_input = GameInput(self.current_input.value)
         self.level.tick()
-        chip = self.level.get_actor_by_idx(0)
-        self.renderer.camera = QRect(chip.position.x - 4, chip.position.y - 4, 9, 9)
 
     def show_example_level(self):
         with open("./CCLP1.dat", "rb") as set_file:
             set_bytes = set_file.read()
         levelset = parse_ccl(set_bytes)
         level_meta = levelset.get_level(2)
-        level = level_meta.make_level(ms_logic)
+        level = level_meta.make_level(lynx_logic)
         self.start_level(level)
 
     current_input: Direction = Direction.Nil

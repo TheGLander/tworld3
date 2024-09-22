@@ -227,6 +227,25 @@ class Actor(c_void_p):
     def position(self) -> Position:
         return Position.from_int(libchips.Actor_get_position(self))
 
+    def visual_position(self, interpolation: float = 1) -> tuple[float, float]:
+        offset = (self.move_cooldown + 2 - 2 * interpolation) / 8
+        base_pos = self.position
+        x = float(base_pos.x)
+        y = float(base_pos.y)
+
+        match self.direction:
+            case Direction.North:
+                y += offset
+            case Direction.West:
+                x += offset
+            case Direction.South:
+                y -= offset
+            case Direction.East:
+                x -= offset
+            case _:
+                pass
+        return (x, y)
+
     @property
     def direction(self) -> Direction:
         return Direction(libchips.Actor_get_direction(self))
@@ -306,6 +325,10 @@ class Level(c_void_p):
 
     def get_actor_by_idx(self, idx: int) -> Actor:
         return libchips.Level_get_actor_by_idx(self, idx)
+
+    @property
+    def chip(self) -> Actor:
+        return self.get_actor_by_idx(0)
 
     def tick(self):
         libchips.Level_tick(self)

@@ -79,7 +79,7 @@ class LevelRenderer(QWidget):
         if not self.level:
             return
         if self.do_interpolation:
-            time_since_tick = now() - self.last_tick 
+            time_since_tick = now() - self.last_tick
             self.interpolation = min(1, time_since_tick * self.expected_tps)
         else:
             self.interpolation = 1

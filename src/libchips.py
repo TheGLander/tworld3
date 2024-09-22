@@ -285,10 +285,12 @@ libchips.Level_get_win_state.restype = c_int8
 class GameInput(int):
     pass
 
+
 class TriRes(Enum):
     Died = -1
     Nothing = 0
     Success = 1
+
 
 class Level(c_void_p):
     @property

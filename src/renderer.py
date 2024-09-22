@@ -1,4 +1,6 @@
 from typing import Callable, Optional
+from time import monotonic as now
+
 from PySide6.QtCore import QPointF, QRect, QRectF, QSize
 from PySide6.QtGui import QPaintEvent, QPainter
 from PySide6.QtWidgets import QMainWindow, QSizePolicy, QWidget
@@ -27,6 +29,11 @@ class LevelRenderer(QWidget):
     request_global_repaint: Optional[GlobalRepaintCallback] = None
     auto_draw: bool = True
 
+    interpolation: float = 1
+    expected_tps = 20
+    last_tick: float = 0
+    do_interpolation = True
+
     def __init__(self, tileset: Tileset, parent=None) -> None:
         super().__init__(parent)
         self.tileset = tileset
@@ -40,12 +47,15 @@ class LevelRenderer(QWidget):
             int(self.tileset.tile_size * self.tile_scale * self.camera_size.height()),
         )
 
+    def level_updated(self):
+        self.last_tick = now()
+
     def draw_terrain(self, pos: Position, terrain: AnyTileID):
         tile_pos = self.tileset.get_image_for_terrain(terrain)
         self.blit(QRectF(pos.x, pos.y, 1, 1), tile_pos)
 
     def draw_actor(self, actor: Actor):
-        pos = actor.visual_position()
+        pos = actor.visual_position(self.interpolation)
         target_pos = QRectF(pos[0], pos[1], 1, 1)
         tile_pos = self.tileset.get_image_for_actor(actor)
         self.blit(target_pos, tile_pos)
@@ -60,7 +70,7 @@ class LevelRenderer(QWidget):
     def recalc_camera(self):
         if not self.level:
             return
-        pos = self.level.chip.visual_position()
+        pos = self.level.chip.visual_position(self.interpolation)
         self.camera_pos = QPointF(
             pos[0] - self.camera_size.width() / 2 + 0.5,
             pos[1] - self.camera_size.height() / 2 + 0.5,
@@ -69,6 +79,11 @@ class LevelRenderer(QWidget):
     def draw_viewport(self):
         if not self.level:
             return
+        if self.do_interpolation:
+            time_since_tick = now() - self.last_tick 
+            self.interpolation = min(1, time_since_tick * self.expected_tps)
+        else:
+            self.interpolation = 1
         self.painter.begin(self)
         self.recalc_camera()
         top_left = self.camera_pos.toPoint()
@@ -86,6 +101,10 @@ class LevelRenderer(QWidget):
         self.painter.end()
 
     def paintEvent(self, event: QPaintEvent) -> None:
-        self.draw_viewport()
+        try:
+            self.draw_viewport()
+        finally:
+            if self.painter.isActive():
+                self.painter.end()
         if self.auto_draw and self.request_global_repaint:
             self.request_global_repaint()

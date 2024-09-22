@@ -4,11 +4,12 @@ from PySide6.QtCore import QEnum, QEvent, QRect, QTimer
 from PySide6.QtGui import QImage, QKeyEvent, QSurfaceFormat, Qt
 from PySide6.QtWidgets import (
     QApplication,
+    QDialog,
     QMainWindow,
     QVBoxLayout,
     QWidget,
 )
-from libchips import Direction, GameInput, Level, parse_ccl, ms_logic, lynx_logic
+from libchips import Direction, GameInput, Level, TriRes, parse_ccl, ms_logic, lynx_logic
 from tileset import TwMsTileset
 from renderer import LevelRenderer, GlobalRepaintCallback
 
@@ -51,6 +52,7 @@ class MainWindow(QMainWindow):
             return
         self.level.game_input = GameInput(self.current_input.value)
         self.level.tick()
+        self.renderer.level_updated()
 
     def show_example_level(self):
         with open("./CCLP1.dat", "rb") as set_file:

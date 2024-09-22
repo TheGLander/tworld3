@@ -228,10 +228,12 @@ class Actor(c_void_p):
         return Position.from_int(libchips.Actor_get_position(self))
 
     def visual_position(self, interpolation: float = 1) -> tuple[float, float]:
-        offset = (self.move_cooldown + 2 - 2 * interpolation) / 8
         base_pos = self.position
         x = float(base_pos.x)
         y = float(base_pos.y)
+        if self.move_cooldown == 0:
+            return (x, y)
+        offset = (self.move_cooldown + 1 - interpolation) / 8
 
         match self.direction:
             case Direction.North:

@@ -250,15 +250,14 @@ static TriRes Level_check_for_ending(Level* self) {
     if (self->win_state != TRIRES_DIED) {
       Level_add_sfx(self, SND_CHIP_LOSES);
     }
-    return TRIRES_DIED;
-  }
-  if (self->level_complete) {
+    self->win_state = TRIRES_DIED;
+  } else if (self->level_complete) {
     if (self->win_state != TRIRES_SUCCESS) {
       Level_add_sfx(self, SND_CHIP_WINS);
     }
-    return TRIRES_SUCCESS;
+    self->win_state = TRIRES_SUCCESS;
   }
-  return TRIRES_NOTHING;
+  return self->win_state;
 }
 
 /* Empty the list of "active" blocks.
@@ -2100,7 +2099,6 @@ static void ms_tick_level(Level* self) {
   }
   Level_update_sliplist(self);
   Level_create_clones(self);
-  self->win_state = Level_check_for_ending(self);
 }
 
 Ruleset const ms_logic = {.id = Ruleset_MS,

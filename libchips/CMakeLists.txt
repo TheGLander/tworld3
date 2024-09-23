@@ -11,6 +11,7 @@ list(APPEND libchips_src
   src/random.c
   src/misc.c
   src/format-ccl.c
+  src/format-tws.c
 )
 
 # add_executable(libchips-cli ${libchips_src} src/main-cli.c)

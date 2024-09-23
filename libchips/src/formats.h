@@ -6,6 +6,10 @@
 #include "logic.h"
 #include "misc.h"
 
+uint16_t read_uint16_le(uint8_t const* data);
+uint32_t read_uint32_le(uint8_t const* data);
+uint64_t read_uint64_le(uint8_t const* data);
+
 typedef struct LevelMetadata {
   char* title;
   uint16_t level_number;

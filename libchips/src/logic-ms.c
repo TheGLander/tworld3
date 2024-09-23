@@ -534,12 +534,13 @@ static void Actor_update_floor(Actor* self, Level* level) {
   if (self->hidden)
     return;
   MapTile* tile = MapCell_get_top_tile(Level_get_map_cell(level, self->pos));
-  if (self->id == Block) {
+  TileID id = self->id;
+  if (id == Block) {
     Level_cell_set_top_floor(level, self->pos, Block_Static);
     if (self->state & CS_MUTANT)
       MapTile_set_floor(tile, TileID_actor_with_dir(Chip, DIRECTION_NORTH));
     return;
-  } else if (self->id == Chip) {
+  } else if (id == Chip) {
     if (level->ms_state.chip_status) {
       switch (level->ms_state.chip_status) {
         case CHIP_BURNED:
@@ -550,14 +551,14 @@ static void Actor_update_floor(Actor* self, Level* level) {
           return;
       }
     } else if (Level_cell_get_bottom_floor(level, self->pos) == Water) {
-      self->id = Swimming_Chip;
+      id = Swimming_Chip;
     }
   }
 
   if (self->state & CS_TURNING)
     self->direction = Direction_right(self->direction);
 
-  MapTile_set_floor(tile, TileID_actor_with_dir(self->id, self->direction));
+  MapTile_set_floor(tile, TileID_actor_with_dir(id, self->direction));
   MapTile_clear_state(tile);
 }
 
@@ -2045,8 +2046,7 @@ static void ms_tick_level(Level* self) {
     self->ms_state.chip_ticks_since_moved++;
     if (self->ms_state.chip_ticks_since_moved > 3) {
       self->ms_state.chip_ticks_since_moved = 3;
-      if (Level_get_chip(self)->direction !=
-          DIRECTION_NIL) /* Convergence Glitch patch (a) */
+      if (Level_get_chip(self)->direction != DIRECTION_NIL) /* Convergence Glitch patch (a) */
         Level_get_chip(self)->direction = DIRECTION_SOUTH;
       Actor_update_floor(Level_get_chip(self), self);
     }

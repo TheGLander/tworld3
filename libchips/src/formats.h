@@ -1,3 +1,6 @@
+#ifndef FORMATS_H
+#define FORMATS_H
+
 #include <stddef.h>
 #include <stdint.h>
 #include "logic.h"
@@ -45,3 +48,5 @@ typedef LevelSet* LevelSetPtr;
 DEFINE_RESULT(LevelSetPtr);
 Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len);
 void LevelSet_free(LevelSet* self);
+
+#endif

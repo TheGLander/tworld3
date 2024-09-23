@@ -4,6 +4,7 @@
 #include "formats.h"
 
 // Sure would be great to have `constexpr` for `TileID_with_dir`
+//use C++ then
 #define north(id) id
 #define west(id) ((id) | 1)
 #define south(id) ((id) | 2)
@@ -68,7 +69,8 @@ static TileID const dat_tileid_map[] = {
     // 0x60
     north(Paramecium), west(Paramecium), south(Paramecium), east(Paramecium),
     Key_Blue, Key_Red, Key_Green, Key_Yellow, Boots_Water, Boots_Fire,
-    Boots_Ice, Boots_Slide, north(Chip), west(Chip), south(Chip), east(Chip)};
+    Boots_Ice, Boots_Slide, north(Chip), west(Chip), south(Chip), east(Chip)
+};
 
 static uint16_t read_uint16_le(uint8_t const* data) {
   return data[0] + (data[1] << 8);

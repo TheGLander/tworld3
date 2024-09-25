@@ -1,5 +1,6 @@
 #include "format-tws.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,8 +74,6 @@ uint32_t TWSSet_get_level_idx(TWSSet const* self, uint16_t level_num) {
   return TWSSet_get_level_solution(self, level_num) - self->solutions;
 }
 
-Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len);
-
 void TWSMetadata_free(TWSMetadata* self) {
   if (self == NULL)
     return;
@@ -87,9 +86,10 @@ void TWSSet_free(TWSSet* self) {
   if (self->set_name != NULL)
     free(self->set_name);
   if (self->solutions) {
-    for (uint16_t i = 0; i < self->solutions_n; i++) {
+    for (uint32_t i = 0; i < self->solutions_n; i++) {
       TWSMetadata_free(&self->solutions[i]);
     }
+    free(self->solutions);
   }
   free(self);
 }
@@ -128,6 +128,8 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
     if (data - base_data __VA_OPT__(-1 +) __VA_ARGS__ >= data_len) { \
       return get_error(set, "TWS file ends too soon");               \
     }
+  if (!data)
+    return get_error(set, "TWS data is NULL");
 
   set->solutions_allocated = 1;
   set->solutions = xmalloc(sizeof(TWSMetadata) * set->solutions_allocated);
@@ -154,8 +156,9 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
   data += bytes_remaining;
 
   uint32_t levels_processed = 0;
+  bool first_run = true;
   while (true) {
-    if (base_data + data_len >= data)
+    if (data - base_data >= data_len)
       break;
     TWSMetadata level = {};
     assert_data_avail(4);
@@ -171,7 +174,7 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
     if (size < 6)
       break;
     // return get_error(set, "Not enough data for first solution.");
-    if (levels_processed == 0 && data[0] == 0 && data[1] == 0 && data[2] == 0 && data[3] == 0 && data[4] == 0 && data[5] == 0) {
+    if (first_run && data[0] == 0 && data[1] == 0 && data[2] == 0 && data[3] == 0 && data[4] == 0 && data[5] == 0) {
       data += 6;
       if (size <= 16)
         return get_error(set, "Not enough data for set name string.");
@@ -181,6 +184,8 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
       memcpy(set->set_name, data, size);
       set->set_name[size - 1] = '\0';
       data += size;
+      first_run = false;
+      continue;
     } else {
       assert_data_avail(6);
       level.level_num = read_uint16_le(data);
@@ -190,12 +195,13 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
       if (size == 6) {
         TWSSet_add_level(set, &level);
       } else {
+        size -= 6;
         assert_data_avail(10);
-        level.other_flags = read_uint16_le(data);
-        data += 2;
+        level.other_flags = *data;
+        data += 1;
         uint8_t slide_step = *data;
         level.slide_direction = slide_step & 0b111;
-        level.step_value = slide_step >> 3;
+        level.step_value = (slide_step >> 3) & 0b11;
         data += 1;
         level.prng_seed = read_uint32_le(data);
         data += 4;
@@ -203,7 +209,8 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
         data += 4;
         size -= 10;
 
-        level.inputs = xmalloc(sizeof(GameInput) * level.num_ticks);
+        assert(((GameInput) DIRECTION_NIL) == 0);
+        level.inputs = xcalloc(sizeof(GameInput), level.num_ticks);
         uint32_t tick = 0;
         GameInput const input_lookup[] = {DIRECTION_NORTH, DIRECTION_WEST, DIRECTION_SOUTH, DIRECTION_EAST,
           DIRECTION_NORTH | DIRECTION_WEST, DIRECTION_SOUTH | DIRECTION_WEST, DIRECTION_NORTH | DIRECTION_EAST,
@@ -278,10 +285,13 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
       }
       TWSSet_add_level(set, &level);
     }
+    first_run = false;
     levels_processed++;
   }
 
-  set->solutions_n = levels_processed - 1;
-  qsort(set->solutions, levels_processed, sizeof(TWSMetadata), TWSMetadata_cmp); //put the levels in order
+  set->solutions_n = levels_processed;
+  set->solutions = xrealloc(set->solutions, sizeof(TWSMetadata) * set->solutions_n);
+  set->solutions_allocated = set->solutions_n;
+  qsort(set->solutions, set->solutions_n, sizeof(TWSMetadata), TWSMetadata_cmp); //put the levels in order
   return res_val(TWSSetPtr, set);
 }

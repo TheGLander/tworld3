@@ -18,3 +18,5 @@ list(APPEND libchips_src
 
 add_library(chips SHARED ${libchips_src})
 
+#for tests
+add_subdirectory(test)

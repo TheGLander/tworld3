@@ -205,7 +205,7 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
         data += 1;
         level.prng_seed = read_uint32_le(data);
         data += 4;
-        level.num_ticks = read_uint32_le(data);
+        level.num_ticks = read_uint32_le(data) + 1; //yeah idk either but it is correct
         data += 4;
         size -= 10;
 
@@ -226,20 +226,20 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
             input = input_lookup[(first_byte >> 2) & 0b11];
             GameInput input2 = input_lookup[(first_byte >> 4) & 0b11];
             GameInput input3 = input_lookup[(first_byte >> 6) & 0b11];
-            level.inputs[tick] = input;
+            level.inputs[tick + 0] = DIRECTION_NIL;
             level.inputs[tick + 1] = DIRECTION_NIL;
             level.inputs[tick + 2] = DIRECTION_NIL;
-            level.inputs[tick + 3] = DIRECTION_NIL;
+            level.inputs[tick + 3] = input;
             tick += 4;
-            level.inputs[tick] = input2;
+            level.inputs[tick + 0] = DIRECTION_NIL;
             level.inputs[tick + 1] = DIRECTION_NIL;
             level.inputs[tick + 2] = DIRECTION_NIL;
-            level.inputs[tick + 3] = DIRECTION_NIL;
+            level.inputs[tick + 3] = input2;
             tick += 4;
-            level.inputs[tick] = input3;
+            level.inputs[tick + 0] = DIRECTION_NIL;
             level.inputs[tick + 1] = DIRECTION_NIL;
             level.inputs[tick + 2] = DIRECTION_NIL;
-            level.inputs[tick + 3] = DIRECTION_NIL;
+            level.inputs[tick + 3] = input3;
             tick += 4;
           } else {
             if ((first_byte & 0b11) == 0b01) {
@@ -279,7 +279,7 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
               level.inputs[tick + i] = DIRECTION_NIL;
             }
             level.inputs[tick + time] = input;
-            tick += time;
+            tick += time + 1;
           }
         }
       }

@@ -23,8 +23,27 @@ namespace {
     EXPECT_TRUE(tws_res.success);
     TWSSet* set = tws_res.value;
     EXPECT_EQ(set->ruleset, Ruleset_MS);
-    EXPECT_EQ(set->solutions_n, 1);
-    EXPECT_EQ(set->solutions_allocated, 1);
+    EXPECT_EQ(set->solutions_n, 2);
+    EXPECT_EQ(set->solutions_allocated, 2);
+
+    EXPECT_EQ(set->solutions[0].level_num, 1);
+    EXPECT_EQ(set->solutions[0].prng_seed, 342566057);
+    EXPECT_EQ(set->solutions[0].num_ticks, 398);
+    EXPECT_EQ(set->solutions[0].other_flags, 0);
+    EXPECT_EQ(set->solutions[0].step_value, 0);
+    EXPECT_EQ(set->solutions[0].slide_direction, 0);
+
+    EXPECT_EQ(set->solutions[1].level_num, 2);
+    EXPECT_EQ(set->solutions[1].num_ticks, 0);
+    EXPECT_EQ(set->solutions[1].inputs, nullptr);
+
+    EXPECT_EQ(set->solutions[0].num_ticks, std::size(example_inputs));
+    for (size_t i = 0; i < set->solutions[0].num_ticks; i++) {
+      GameInput input = set->solutions[0].inputs[i];
+      GameInput example_input = example_inputs[i];
+      // printf("%d : %d\n", input, example_input);
+      EXPECT_EQ(input, example_input);
+    }
 
     TWSSet_free(set);
   }

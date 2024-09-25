@@ -155,8 +155,9 @@ Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len) {
         meta->title =
             strndup((char const*)data, chunk_len > 64 ? chunk_len : 64);
       } else if (chunk_type == CCL_CHUNK_TRAPS) {
-        uint8_t traps_n = chunk_type / 10;
+        uint8_t traps_n = chunk_len / 10;
         meta->trap_links = xmalloc(sizeof(ConnList));
+        meta->trap_links->length = traps_n;
         for (uint8_t trap_idx = 0; trap_idx < traps_n; trap_idx += 1) {
           TileConn* conn = &meta->trap_links->items[trap_idx];
           uint16_t from_x = read_uint16_le(&data[trap_idx * 10]);
@@ -167,10 +168,10 @@ Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len) {
           conn->from = from_x + from_y * MAP_WIDTH;
           conn->to = to_x + to_y * MAP_WIDTH;
         }
-        data -= traps_n * 10;
       } else if (chunk_type == CCL_CHUNK_CLONERS) {
-        uint8_t cloners_n = chunk_type / 8;
+        uint8_t cloners_n = chunk_len / 8;
         meta->cloner_links = xmalloc(sizeof(ConnList));
+        meta->cloner_links->length = cloners_n;
         for (uint8_t cloner_idx = 0; cloner_idx < cloners_n; cloner_idx += 1) {
           TileConn* conn = &meta->cloner_links->items[cloner_idx];
           uint16_t from_x = read_uint16_le(&data[cloner_idx * 8]);

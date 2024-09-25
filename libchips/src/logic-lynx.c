@@ -130,10 +130,10 @@ static bool lynx_init_level(Level* self) {
     MapCell* cell = &self->map[pos];
     // Convert MS tiles into Lynx-comptabile subtitutes
     if (cell->top.id == Block_Static) {
-      cell->top.id = TileID_actor_with_dir(Block_Static, DIRECTION_NORTH);
+      cell->top.id = TileID_actor_with_dir(Block, DIRECTION_NORTH);
     }
     if (cell->bottom.id == Block_Static) {
-      cell->bottom.id = TileID_actor_with_dir(Block_Static, DIRECTION_NORTH);
+      cell->bottom.id = TileID_actor_with_dir(Block, DIRECTION_NORTH);
     }
     if (TileID_is_ms_special(cell->top.id)) {
       cell->top.id = Wall;
@@ -549,7 +549,7 @@ static bool Actor_check_collision(Actor const* self,
   // These walls turn into real walls, but I guess we have to do this after the
   // actor check?
   // TODO: Can we not just put this in `TileID_impedes_actor`?
-  if (self->id == Chip &&
+  if (self->id == Chip && (flags & CMM_STARTMOVEMENT) &&
       (new_terrain == HiddenWall_Temp || new_terrain == BlueWall_Real)) {
     level->map[target_pos].top.id = Wall;
     return false;
@@ -928,6 +928,7 @@ static TriRes Actor_enter_tile(Actor* self, Level* level, bool pedantic_idle) {
       if (!pedantic_idle) {
         Level_add_sfx(level, SND_BUTTON_PUSHED);
       }
+    break;
     case Exit:
       if (self->id != Chip)
         break;

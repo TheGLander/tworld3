@@ -1343,7 +1343,7 @@ static void lynx_tick_level(Level* self) {
        actor -= 1) {
     if (actor != chip && actor->hidden)
       continue;
-    if (Actor_is_moving(actor))
+    if (!TileID_is_animation(actor->id) && Actor_is_moving(actor))
       continue;
     Actor_do_decision(actor, self);
   }

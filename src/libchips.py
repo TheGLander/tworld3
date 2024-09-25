@@ -187,6 +187,11 @@ class TileID(Enum):
     def is_actor(self):
         return TileID.Animation_Reserved1.value >= self.value >= TileID.Chip.value
 
+    def is_animation(self):
+        return (
+            TileID.Animation_Reserved1.value >= self.value >= TileID.Water_Splash.value
+        )
+
     @staticmethod
     def from_libchips(id: int) -> "AnyTileID":
         pure_id = TileID(id & ~3)
@@ -233,6 +238,8 @@ class Actor(c_void_p):
         y = float(base_pos.y)
         if self.move_cooldown == 0:
             return (x, y)
+        if self.id.is_animation():
+            interpolation = 1
         offset = (self.move_cooldown + 1 - interpolation) / 8
 
         match self.direction:
@@ -255,6 +262,13 @@ class Actor(c_void_p):
     @property
     def id(self) -> TileID:
         return TileID(libchips.Actor_get_id(self))
+
+    @property
+    def full_id(self) -> AnyTileID:
+        id = self.id
+        if not id.is_actor() or id.is_animation():
+            return id
+        return (id, self.direction)
 
     @property
     def move_cooldown(self) -> int:
@@ -361,6 +375,8 @@ class Level(c_void_p):
             if actor.id == TileID.Nothing:
                 break
             yield actor
+
+    size = (32, 32)
 
 
 libchips.LevelMetadata_get_title.restype = c_char_p

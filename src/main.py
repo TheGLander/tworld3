@@ -18,7 +18,7 @@ from libchips import (
     ms_logic,
     lynx_logic,
 )
-from tileset import TwMsTileset
+from tileset import TwLynxTileset, TwMsTileset
 from renderer import LevelRenderer, GlobalRepaintCallback
 
 
@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         self.main_container.setLayout(layout)
         self.setCentralWidget(self.main_container)
 
-        self.renderer = LevelRenderer(TwMsTileset(QImage("./tiles.bmp")), self)
+        self.renderer = LevelRenderer(TwLynxTileset(QImage("./atiles.bmp")), self)
         layout.addWidget(self.renderer, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def start_level(self, level: Level):
@@ -71,7 +71,7 @@ class MainWindow(QMainWindow):
             set_bytes = set_file.read()
         levelset = parse_ccl(set_bytes)
         level_meta = levelset.get_level(2)
-        level = level_meta.make_level(ms_logic)
+        level = level_meta.make_level(lynx_logic)
         self.start_level(level)
 
     current_input: Direction = Direction.Nil

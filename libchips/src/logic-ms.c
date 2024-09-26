@@ -469,14 +469,14 @@ static Actor* Level_create_actor(Level* level) {
     return NULL;
   }
   Actor* actor = &level->actors[level->ms_state.actor_count];
-  *actor = (Actor){.id = Nothing,
-                   .pos = POSITION_NULL,
+  *actor = (Actor){.pos = POSITION_NULL,
+                   .id = Nothing,
                    .direction = DIRECTION_NIL,
-                   .move_decision = DIRECTION_NIL,
-                   .state = 0,
+                   .move_cooldown = 0,
                    .animation_frame = 0,
                    .hidden = false,
-                   .move_cooldown = 0};
+                   .state = 0,
+                   .move_decision = DIRECTION_NIL,};
 
   level->ms_state.actor_count++;
   return actor;

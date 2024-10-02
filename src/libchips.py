@@ -13,18 +13,18 @@ from ctypes import (
     c_void_p,
     create_string_buffer,
 )
-from enum import Enum
+from enum import Enum, IntEnum
 from dataclasses import dataclass
 from os import getcwd
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 from itertools import count as range_inf
 
 from PySide6.QtCore import QPoint
 
 
 def get_libchips_path():
-    cwd = Path(getcwd())
+    cwd = Path(__file__).parent.parent
     cwd_lib = cwd / "libchips.so"
     if cwd_lib.exists():
         return str(cwd_lib)
@@ -58,13 +58,18 @@ def Result(val_type: type):
 
 
 class Ruleset(c_void_p):
+    class RulesetID(Enum):
+        Nil = 0
+        Lynx = 1
+        Ms = 2
+
     @staticmethod
     def from_global_var(var: str):
         return Ruleset(addressof(c_bool.in_dll(libchips, var)))
 
     @property
     def id(self):
-        return libchips.Ruleset_get_id(self)
+        return self.RulesetID(libchips.Ruleset_get_id(self))
 
 
 lynx_logic = Ruleset.from_global_var("lynx_logic")
@@ -294,10 +299,22 @@ libchips.Level_get_bottom_terrain.restype = c_uint8
 libchips.Level_get_actor_by_idx.restype = Actor
 libchips.Level_get_game_input.restype = c_uint16
 libchips.Level_get_win_state.restype = c_int8
+libchips.Level_get_metadata.restype = c_void_p
+libchips.Level_player_has_item.restype = c_bool
 
 
 class GameInput(int):
-    pass
+    @staticmethod
+    def none() -> "GameInput":
+        return GameInput(0)
+
+    @staticmethod
+    def dir(dir: Direction) -> "GameInput":
+        return GameInput(dir.value)
+
+    @staticmethod
+    def mouse_abs(pos: Position) -> "GameInput":
+        return GameInput(512 + pos.to_int())
 
 
 class TriRes(Enum):
@@ -307,6 +324,13 @@ class TriRes(Enum):
 
 
 class Level(c_void_p):
+    class StatusFlags(IntEnum):
+        InvalidLevel = 0x2
+        HasBadTiles = 0x4
+        ShowHint = 0x8
+        DontAnimateActors = 0x10
+        ShutterWhenPaused = 0x20
+
     @property
     def ruleset(self) -> Ruleset:
         return libchips.Level_get_ruleset(self)
@@ -378,6 +402,14 @@ class Level(c_void_p):
 
     size = (32, 32)
 
+    @property
+    def metadata(self) -> Optional["LevelMetadata"]:
+        ptr: int | None = libchips.Level_get_metadata(self)
+        return LevelMetadata(ptr) if ptr != None else None
+
+    def player_has_item(self, item: TileID):
+        return libchips.Level_player_has_item(self, item.value)
+
 
 libchips.LevelMetadata_get_title.restype = c_char_p
 libchips.LevelMetadata_get_level_number.restype = c_uint16
@@ -393,7 +425,8 @@ libchips.LevelMetadata_make_level.restype = Result(Level)
 class LevelMetadata(c_void_p):
     @property
     def title(self) -> str | None:
-        return libchips.LevelMetadata_get_title(self).decode("latin-1")
+        ptr = libchips.LevelMetadata_get_title(self)
+        return ptr.decode("latin-1") if ptr != None else None
 
     @property
     def level_number(self) -> int:
@@ -408,16 +441,18 @@ class LevelMetadata(c_void_p):
         return libchips.LevelMetadata_get_chips_required(self)
 
     @property
-    def password(self) -> str | None:
+    def password(self) -> str:
         return libchips.LevelMetadata_get_password(self).decode("latin-1")
 
     @property
     def hint(self) -> str | None:
-        return libchips.LevelMetadata_get_hint(self).decode("latin-1")
+        ptr = libchips.LevelMetadata_get_hint(self)
+        return ptr.decode("latin-1") if ptr != None else None
 
     @property
     def author(self) -> str | None:
-        return libchips.LevelMetadata_get_author(self).decode("latin-1")
+        ptr = libchips.LevelMetadata_get_author(self)
+        return ptr.decode("latin-1") if ptr != None else None
 
     def make_level(self, ruleset: Ruleset) -> Level:
         level_res = libchips.LevelMetadata_make_level(self, ruleset)
@@ -427,9 +462,23 @@ class LevelMetadata(c_void_p):
 
 libchips.LevelSet_get_levels_n.restype = c_uint16
 libchips.LevelSet_get_level.restype = LevelMetadata
+libchips.LevelSet_get_name.restype = c_char_p
 
 
 class LevelSet(c_void_p):
+    @property
+    def name(self) -> Optional[str]:
+        ptr = libchips.LevelSet_get_name(self)
+        return ptr.decode("latin-1") if ptr != None else None
+
+    @name.setter
+    def name(self, val: str | None):
+        if val == None:
+            libchips.LevelSet_set_name(self, c_void_p(0))
+            return
+        buf = create_string_buffer(val.encode("utf-8"))
+        libchips.LevelSet_set_name(self, buf)
+
     @property
     def levels_n(self) -> int:
         return libchips.LevelSet_get_levels_n(self)

@@ -1,11 +1,11 @@
 from typing import Callable, Optional
 from time import monotonic as now
 
-from PySide6.QtCore import QPointF, QRect, QRectF, QSize
-from PySide6.QtGui import QPaintEvent, QPainter
+from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, QSize, QSizeF, Signal
+from PySide6.QtGui import QCursor, QMouseEvent, QPaintEvent, QPainter, Qt
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
-from libchips import Actor, AnyTileID, Direction, Level, Position
+from libchips import Actor, AnyTileID, Direction, GameInput, Level, Position, TileID
 from tileset import RenderPosition, Tileset
 
 GlobalRepaintCallback = Callable[..., None]
@@ -33,11 +33,32 @@ class LevelRenderer(QWidget):
     last_tick: float = 0
     do_interpolation = True
 
-    def __init__(self, tileset: Tileset, parent=None) -> None:
+    _clickable = False
+
+    @property
+    def clickable(self) -> bool:
+        return self._clickable
+
+    @clickable.setter
+    def clickable(self, val: bool):
+        if val:
+            self.setCursor(Qt.CursorShape.CrossCursor)
+        else:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+        self._clickable = val
+
+    def get_repaint(self):
+        # HACK: Apparently calling `winId` on a widget causes it to suddenly know its QWindow, which it otherwise might not provide?
+        self.winId()
+        window = self.windowHandle()
+        if not window:
+            return None
+        return window.requestUpdate
+
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.tileset = tileset
         self.painter = QPainter()
-        self.rescale()
+        self.request_global_repaint = self.get_repaint()
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
 
     def rescale(self):
@@ -144,7 +165,7 @@ class LevelRenderer(QWidget):
                 self.draw_terrain(pos, top_terrain)
         # Draw actors
         for actor in self.level.actors:
-            if actor.hidden:
+            if actor.hidden or self.level.status_flags & Level.StatusFlags.DontAnimateActors :
                 continue
             self.draw_actor(actor)
         self.painter.end()
@@ -157,3 +178,69 @@ class LevelRenderer(QWidget):
                 self.painter.end()
         if self.auto_draw and self.request_global_repaint:
             self.request_global_repaint()
+
+    mouse_press = Signal(GameInput)
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if not self._clickable:
+            return super().mousePressEvent(event)
+        tile_size = int(self.tile_scale * self.tileset.tile_size)
+        top_left_px_pos = QPoint(
+            int(self.camera_pos.x() * tile_size), int(self.camera_pos.y() * tile_size)
+        )
+        px_pos = event.pos() + top_left_px_pos
+        pos = Position(px_pos.x() // tile_size, px_pos.y() // tile_size)
+        self.mouse_press.emit(GameInput.mouse_abs(pos))
+
+
+class Inventory(QWidget):
+    painter: QPainter
+    tileset: Tileset
+    tile_scale: float = 1.0
+    level: Optional[Level] = None
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.painter = QPainter()
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+    def draw_terrain(self, target_p: QPoint, id: TileID):
+        tile_size = self.tile_scale * self.tileset.tile_size
+        target = QRectF(target_p.x(), target_p.y(), 1, 1)
+        scale_rect(target, tile_size)
+
+        source = QRectF(
+            self.tileset.get_image_for_terrain(id, 0).toPointF(),
+            QSizeF(tile_size, tile_size),
+        )
+        self.painter.drawImage(target, self.tileset.image, source)
+
+    def rescale(self):
+        self.setFixedSize(
+            int(self.tileset.tile_size * self.tile_scale * 4),
+            int(self.tileset.tile_size * self.tile_scale * 2),
+        )
+
+    def paintEvent(self, event: QPaintEvent):
+        self.painter.begin(self)
+        boots_order = [
+            TileID.Boots_Ice,
+            TileID.Boots_Slide,
+            TileID.Boots_Fire,
+            TileID.Boots_Water,
+        ]
+        keys_order = [
+            TileID.Key_Red,
+            TileID.Key_Blue,
+            TileID.Key_Yellow,
+            TileID.Key_Green,
+        ]
+        for idx, boot in enumerate(boots_order):
+            self.draw_terrain(QPoint(idx, 0), TileID.Empty)
+            if self.level and self.level.player_has_item(boot):
+                self.draw_terrain(QPoint(idx, 0), boot)
+        for idx, key in enumerate(keys_order):
+            self.draw_terrain(QPoint(idx, 1), TileID.Empty)
+            if self.level and self.level.player_has_item(key):
+                self.draw_terrain(QPoint(idx, 1), key)
+        self.painter.end()

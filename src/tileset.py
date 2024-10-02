@@ -186,12 +186,14 @@ class TwMsTileset(Tileset):
         return tilesize_w == tilesize_h
 
     def get_image_for_terrain(self, id: AnyTileID, tick: int) -> QPoint:
-        return QPoint(ms_tileset_tileid_to_pos[id])
+        og_point = ms_tileset_tileid_to_pos[id]
+        return QPoint(og_point.x() * self.tile_size, og_point.y() * self.tile_size)
 
     def get_image_for_actor(self, actor: Actor) -> tuple[RenderPosition, QPoint]:
+        og_point = ms_tileset_tileid_to_pos[actor.full_id]
         return (
             RenderPosition.Normal,
-            ms_tileset_tileid_to_pos[actor.full_id],
+            QPoint(og_point.x() * self.tile_size, og_point.y() * self.tile_size)
         )
 
 

@@ -1,109 +1,138 @@
 #!/usr/bin/env python3
-from typing import Optional
-from PySide6.QtCore import QTimer
-from PySide6.QtGui import QImage, QKeyEvent, QSurfaceFormat, Qt
-from PySide6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QMessageBox,
-    QVBoxLayout,
-    QWidget,
-)
-from libchips import (
-    Direction,
-    GameInput,
-    Level,
-    TriRes,
-    parse_ccl,
-    ms_logic,
-    lynx_logic,
-)
-from tileset import TwLynxTileset, TwMsTileset
-from renderer import LevelRenderer, GlobalRepaintCallback
+from PySide6.QtCore import QMimeData, QUrl
+from PySide6.QtGui import QAction, QCursor, QDragEnterEvent, QDropEvent, Qt
+from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow, QStackedWidget
+
+from pathlib import Path
+
+from level_player import LevelPlayer
+from libchips import LevelSet, parse_ccl, lynx_logic, ms_logic
+
+
+def path_from_mime_data(mime_data: QMimeData) -> Path:
+    return Path(mime_data.urls()[0].path())
 
 
 class MainWindow(QMainWindow):
-    renderer: LevelRenderer
-    level: Optional[Level]
-    main_container: QWidget
-    tick_timer: QTimer
-
-    def get_global_repaint_func(self) -> GlobalRepaintCallback:
-        # HACK: The only way to repaint anything once every frame is to hijack the lower-level QWindow
-        # `requestUpdate` inteded to be used by OpenGL-only applications, which queues a repaint of the
-        # whole window in sync with VSync
-        return self.windowHandle().requestUpdate
+    page_selector: QStackedWidget
+    level_player: LevelPlayer
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.tick_timer = QTimer(self)
-        self.tick_timer.timeout.connect(self.tick_level)
+        self.setWindowTitle("Tile World 3")
+        self.page_selector = QStackedWidget(self)
+        self.setCentralWidget(self.page_selector)
 
-        self.main_container = QWidget(self)
-        layout = QVBoxLayout(self.main_container)
-        self.main_container.setLayout(layout)
-        self.setCentralWidget(self.main_container)
+        self.level_player = LevelPlayer(self.page_selector)
+        self.page_selector.addWidget(self.level_player)
 
-        self.renderer = LevelRenderer(TwLynxTileset(QImage("./atiles.bmp")), self)
-        layout.addWidget(self.renderer, alignment=Qt.AlignmentFlag.AlignCenter)
+        menu_bar = self.menuBar()
 
-    def start_level(self, level: Level):
-        self.level = level
-        self.renderer.level = level
-        self.renderer.request_global_repaint = self.get_global_repaint_func()
-        self.renderer.auto_draw = True
-        self.tick_timer.setTimerType(Qt.TimerType.PreciseTimer)
-        self.tick_timer.start(1000 // 20)
+        def Action(label, shortcut, slot):
+            action = QAction(label, self)
+            action.setShortcut(shortcut)
+            action.triggered.connect(slot)
+            return action
 
-    def tick_level(self):
-        if not self.level or self.level.win_state != TriRes.Nothing:
+        file_menu = menu_bar.addMenu("&File")
+        file_menu.addActions(
+            [
+                Action(
+                    "&Open level set...",
+                    Qt.Modifier.CTRL | Qt.Key.Key_O,
+                    self.open_set_file,
+                ),
+            ]
+        )
+
+        level_menu = menu_bar.addMenu("Level")
+
+        level_menu.addActions(
+            [
+                Action("&Start", Qt.Key.Key_Space, self.level_player.start_level),
+                Action(
+                    "&Restart",
+                    Qt.Modifier.CTRL | Qt.Key.Key_R,
+                    self.level_player.restart_level,
+                ),
+                Action("&Pause", Qt.Key.Key_Backspace, self.level_player.toggle_paused),
+            ]
+        )
+        level_menu.addSeparator()
+        level_menu.addActions(
+            [
+                Action(
+                    "P&revious level",
+                    Qt.Modifier.CTRL | Qt.Key.Key_P,
+                    self.level_player.previous_level,
+                ),
+                Action("&Next level", Qt.Modifier.CTRL | Qt.Key.Key_N, self.level_player.next_level),
+                # Action("Level list", Qt.Key.Key_Backspace, self.level_player.toggle_paused),
+            ]
+        )
+        level_menu.addSeparator()
+        level_menu.addActions(
+            [
+                Action(
+                    "Toggle r&uleset",
+                    Qt.Modifier.ALT | Qt.Key.Key_R,
+                    self.level_player.toggle_ruleset,
+                ),
+                Action(
+                    "Open debug tools",
+                    Qt.Modifier.ALT | Qt.Key.Key_D,
+                    self.level_player.open_debug_tools,
+                ),
+            ]
+        )
+
+        self.setAcceptDrops(True)
+
+        self.level_player.ruleset = lynx_logic
+
+    def open_set(self, set: LevelSet):
+        self.page_selector.setCurrentWidget(self.level_player)
+        self.level_player.open_set(set)
+
+    def open_set_file(self):
+        file, chosen_filter = QFileDialog.getOpenFileName(
+            self, "Open Set", filter="Level Set (*.dat *.ccl)"
+        )
+        if file == "":
             return
-        self.level.game_input = GameInput(self.current_input.value)
-        self.level.tick()
-        self.renderer.level_updated()
-        if self.level.win_state == TriRes.Success:
-            QMessageBox.information(self, "You won!", "ayy!")
-        elif self.level.win_state == TriRes.Died:
-            QMessageBox.warning(self, "You died", "bummer")
+        path = Path(file)
+        set = parse_ccl(path.read_bytes())
+        set.name = path.stem
+        self.open_set(set)
 
-    def show_example_level(self):
-        with open("./CCLP1.dat", "rb") as set_file:
-            set_bytes = set_file.read()
-        levelset = parse_ccl(set_bytes)
-        level_meta = levelset.get_level(2)
-        level = level_meta.make_level(lynx_logic)
-        self.start_level(level)
+    recognized_extensions = (".ccl", ".dat")
 
-    current_input: Direction = Direction.Nil
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        mime_data = event.mimeData()
+        if len(mime_data.urls()) != 1:
+            return
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_Up:
-            self.current_input = self.current_input.add_dir(Direction.North)
-        elif event.key() == Qt.Key.Key_Right:
-            self.current_input = self.current_input.add_dir(Direction.East)
-        elif event.key() == Qt.Key.Key_Down:
-            self.current_input = self.current_input.add_dir(Direction.South)
-        elif event.key() == Qt.Key.Key_Left:
-            self.current_input = self.current_input.add_dir(Direction.West)
-        else:
-            super().keyPressEvent(event)
+        path = path_from_mime_data(mime_data)
+        if path.suffix in self.recognized_extensions:
+            event.acceptProposedAction()
 
-    def keyReleaseEvent(self, event: QKeyEvent) -> None:
-        if event.key() == Qt.Key.Key_Up:
-            self.current_input = self.current_input.remove_dir(Direction.North)
-        elif event.key() == Qt.Key.Key_Right:
-            self.current_input = self.current_input.remove_dir(Direction.East)
-        elif event.key() == Qt.Key.Key_Down:
-            self.current_input = self.current_input.remove_dir(Direction.South)
-        elif event.key() == Qt.Key.Key_Left:
-            self.current_input = self.current_input.remove_dir(Direction.West)
-        else:
-            super().keyPressEvent(event)
+    def dropEvent(self, event: QDropEvent) -> None:
+        path = path_from_mime_data(event.mimeData())
+
+        if path.suffix in (".ccl", ".dat"):
+            # TODO: Add loaded set to local sets dir
+            set = parse_ccl(path.read_bytes())
+            set.name = path.stem
+            self.open_set(set)
 
 
 if __name__ == "__main__":
     app = QApplication()
     win = MainWindow()
     win.show()
-    win.show_example_level()
+    with open("./CCLP1.dat", "rb") as set_file:
+        set_bytes = set_file.read()
+    levelset = parse_ccl(set_bytes)
+    levelset.name = "CCLP1"
+    win.open_set(levelset)
     app.exec()

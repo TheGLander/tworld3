@@ -206,3 +206,8 @@ void Level_set_game_input(Level* self, GameInput game_input) {
 TriRes Level_get_win_state(Level const* self) {
   return self->win_state;
 };
+
+LevelMetadata const* Level_get_metadata(Level const* self) {
+  return self->metadata;
+};
+

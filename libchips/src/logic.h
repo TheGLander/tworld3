@@ -279,8 +279,10 @@ RulesetID Ruleset_get_id(const Ruleset* self);
 enum { TRIRES_DIED = -1, TRIRES_NOTHING = 0, TRIRES_SUCCESS = 1 };
 typedef int8_t TriRes;
 
+typedef struct LevelMetadata LevelMetadata;
+
 typedef struct Level {
-  // `game`?
+  LevelMetadata const* metadata; 
   Ruleset const* ruleset;
   // `replay`?
   int8_t timer_offset;
@@ -329,6 +331,8 @@ bool Level_player_has_item(Level const* self, TileID id);
 void Level_set_game_input(Level* self, GameInput game_input);
 GameInput Level_get_game_input(Level const* self);
 TriRes Level_get_win_state(Level const* self);
+LevelMetadata const* Level_get_metadata(Level const* self);
+
 
 typedef enum Sfx {
   SND_CHIP_LOSES = 0,

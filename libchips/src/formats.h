@@ -38,9 +38,12 @@ Result_LevelPtr LevelMetadata_make_level(LevelMetadata const* self,
                                          Ruleset const* ruleset);
 
 typedef struct LevelSet {
+  char* name;
   uint16_t levels_n;
   LevelMetadata levels[];
 } LevelSet;
+void LevelSet_set_name(LevelSet* self, char const* set_name);
+char const* LevelSet_get_name(LevelSet const* self);
 uint16_t LevelSet_get_levels_n(LevelSet const* self);
 LevelMetadata* LevelSet_get_level(LevelSet* self, uint16_t idx);
 

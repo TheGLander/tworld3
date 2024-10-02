@@ -32,6 +32,12 @@ char const* LevelMetadata_get_author(LevelMetadata const* self) {
   return self->author;
 };
 
+void LevelSet_set_name(LevelSet* self, char const* set_name) {
+  self->name = set_name != NULL ? strdup(set_name) : NULL;
+};
+char const* LevelSet_get_name(LevelSet const* self) {
+  return self->name;
+};
 uint16_t LevelSet_get_levels_n(LevelSet const* self) {
   return self->levels_n;
 };
@@ -113,6 +119,7 @@ Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len) {
   data += 2;
 
   set = xmalloc(sizeof(LevelSet) + levels_n * sizeof(LevelMetadata));
+  *set = (LevelSet){};
   // We will update `levels_n` as we parse the levels, so that uninit in case of
   // error is easier
   set->levels_n = 0;
@@ -219,9 +226,11 @@ Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len) {
   return res_val(LevelSetPtr, set);
 }
 
+
 void LevelSet_free(LevelSet* self) {
   if (self == NULL)
     return;
+  free(self->name);
   for (uint16_t level_idx = 0; level_idx < self->levels_n; level_idx += 1) {
     LevelMetadata* meta = &self->levels[level_idx];
     free(meta->title);
@@ -312,6 +321,7 @@ Result_LevelPtr LevelMetadata_make_level(LevelMetadata const* self,
   }
 
   level->ruleset = ruleset;
+  level->metadata = self;
   bool init_success = ruleset->init_level(level);
   return res_val(LevelPtr, level);
 }

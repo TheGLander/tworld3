@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
-from PySide6.QtCore import QMimeData, QUrl
-from PySide6.QtGui import QAction, QCursor, QDragEnterEvent, QDropEvent, Qt
-from PySide6.QtWidgets import QApplication, QFileDialog, QMainWindow, QStackedWidget
+from typing import Tuple
+from PySide6.QtCore import QMimeData, QUrl, Slot
+from PySide6.QtGui import QAction, QCursor, QDragEnterEvent, QDropEvent, QPixmap, Qt
+from PySide6.QtWidgets import (
+    QApplication,
+    QFileDialog,
+    QMainWindow,
+    QStackedWidget,
+    QWidget,
+)
 
 from pathlib import Path
 
 from level_player import LevelPlayer
 from libchips import LevelSet, parse_ccl, lynx_logic, ms_logic
+from set_selector import SelectableRuleset, SetSelector
 
 
 def path_from_mime_data(mime_data: QMimeData) -> Path:
@@ -16,6 +24,7 @@ def path_from_mime_data(mime_data: QMimeData) -> Path:
 class MainWindow(QMainWindow):
     page_selector: QStackedWidget
     level_player: LevelPlayer
+    set_selector: SetSelector
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -26,6 +35,10 @@ class MainWindow(QMainWindow):
         self.level_player = LevelPlayer(self.page_selector)
         self.page_selector.addWidget(self.level_player)
 
+        self.set_selector = SetSelector(self.page_selector)
+        self.set_selector.set_opened.connect(self.open_selected_set)
+        self.page_selector.addWidget(self.set_selector)
+
         menu_bar = self.menuBar()
 
         def Action(label, shortcut, slot):
@@ -34,7 +47,7 @@ class MainWindow(QMainWindow):
             action.triggered.connect(slot)
             return action
 
-        file_menu = menu_bar.addMenu("&File")
+        file_menu = menu_bar.addMenu("&Set")
         file_menu.addActions(
             [
                 Action(
@@ -42,10 +55,11 @@ class MainWindow(QMainWindow):
                     Qt.Modifier.CTRL | Qt.Key.Key_O,
                     self.open_set_file,
                 ),
+                Action("Open &set selector", Qt.Key.Key_Escape, self.open_set_selector),
             ]
         )
 
-        level_menu = menu_bar.addMenu("Level")
+        level_menu = menu_bar.addMenu("&Level")
 
         level_menu.addActions(
             [
@@ -66,18 +80,17 @@ class MainWindow(QMainWindow):
                     Qt.Modifier.CTRL | Qt.Key.Key_P,
                     self.level_player.previous_level,
                 ),
-                Action("&Next level", Qt.Modifier.CTRL | Qt.Key.Key_N, self.level_player.next_level),
+                Action(
+                    "&Next level",
+                    Qt.Modifier.CTRL | Qt.Key.Key_N,
+                    self.level_player.next_level,
+                ),
                 # Action("Level list", Qt.Key.Key_Backspace, self.level_player.toggle_paused),
             ]
         )
         level_menu.addSeparator()
         level_menu.addActions(
             [
-                Action(
-                    "Toggle r&uleset",
-                    Qt.Modifier.ALT | Qt.Key.Key_R,
-                    self.level_player.toggle_ruleset,
-                ),
                 Action(
                     "Open debug tools",
                     Qt.Modifier.ALT | Qt.Key.Key_D,
@@ -89,10 +102,25 @@ class MainWindow(QMainWindow):
         self.setAcceptDrops(True)
 
         self.level_player.ruleset = lynx_logic
+        self.page_selector.setCurrentWidget(self.set_selector)
+
+    def open_page(self, page: QWidget):
+        old_page = self.page_selector.currentWidget()
+        assert getattr(old_page, "close_page") != None
+        old_page.close_page()  # type: ignore
+        self.page_selector.setCurrentWidget(page)
+
+    def open_selected_set(self, set_info: Tuple[LevelSet, SelectableRuleset]):
+        set, ruleset = set_info
+        self.level_player.ruleset = ruleset.lib_ruleset
+        self.open_set(set)
 
     def open_set(self, set: LevelSet):
-        self.page_selector.setCurrentWidget(self.level_player)
         self.level_player.open_set(set)
+        self.open_page(self.level_player)
+
+    def open_set_selector(self):
+        self.open_page(self.set_selector)
 
     def open_set_file(self):
         file, chosen_filter = QFileDialog.getOpenFileName(
@@ -128,11 +156,11 @@ class MainWindow(QMainWindow):
 
 if __name__ == "__main__":
     app = QApplication()
+    app.setApplicationName("tworld3")
+    app.setApplicationDisplayName("Tile World 3")
+    app.setDesktopFileName("TWorld3")
+    icon = QPixmap("./icon.png")
+    app.setWindowIcon(icon)
     win = MainWindow()
     win.show()
-    with open("./CCLP1.dat", "rb") as set_file:
-        set_bytes = set_file.read()
-    levelset = parse_ccl(set_bytes)
-    levelset.name = "CCLP1"
-    win.open_set(levelset)
     app.exec()

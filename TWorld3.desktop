@@ -1,0 +1,11 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=Tile World 3
+Comment=Play Chip's Challenge levels in MS and Lynx rulesets
+GenericName=Chip's Challenge emulator
+Exec=tworld3
+Icon=tworld3
+Type=Application
+StartupNotify=false
+StartupWMClass=tworld3
+Categories=Game;

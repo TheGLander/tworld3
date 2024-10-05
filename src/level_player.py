@@ -1,6 +1,6 @@
 from enum import Enum
 from typing import Optional
-from PySide6.QtCore import QPoint, QSize, QTimer
+from PySide6.QtCore import SLOT, QPoint, QSize, QTimer, Slot
 from PySide6.QtGui import (
     QColor,
     QImage,
@@ -36,14 +36,16 @@ from libchips import (
     lynx_logic,
     ms_logic,
 )
+from preferences import get_tileset
 from tileset import Tileset, TwLynxTileset, TwMsTileset
 from renderer import Inventory, LevelRenderer
 
 
 class GameState(Enum):
-    Preplay = 0
-    Playing = 1
-    Pause = 2
+    Inactive = 0
+    Preplay = 1
+    Playing = 2
+    Pause = 3
 
 
 class ColorProgressBar(QFrame):
@@ -124,20 +126,11 @@ class DebugWindow(QDialog):
         layout.addWidget(step_button, 1, 0)
 
 
-# TODO: This a config-adjacent function, move it to a preference.py or something
-def get_tileset(ruleset: Ruleset) -> Tileset:
-    return (
-        TwLynxTileset(QImage("./atiles.bmp"))
-        if ruleset.id == Ruleset.RulesetID.Lynx
-        else TwMsTileset(QImage("./tiles.bmp"))
-    )
-
-
 class LevelPlayer(QWidget):
     level_set: LevelSet
     cur_level_index: int
     level: Optional[Level] = None
-    game_state: GameState = GameState.Preplay
+    game_state: GameState = GameState.Inactive
     ruleset: Ruleset
 
     # Bottom bar
@@ -221,7 +214,9 @@ class LevelPlayer(QWidget):
 
         stats_layout.addWidget(Label("Chips left"), 2, 0)
         self.chips_left_w = QLabel("0", stats_box)
-        self.chips_left_w.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self.chips_left_w.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
         self.chips_left_w.setMargin(2)
         self.chips_left_w.setFrameStyle(QFrame.Shadow.Sunken | QFrame.Shape.Panel)
         stats_layout.addWidget(self.chips_left_w, 2, 2)
@@ -271,19 +266,22 @@ class LevelPlayer(QWidget):
         return self.level_set.get_level(self.cur_level_index)
 
     def previous_level(self):
+        if self.game_state == GameState.Inactive:
+            return
         if self.cur_level_index == 0:
             return
         self.cur_level_index -= 1
         self.restart_level()
-    
+
     def next_level(self):
+        if self.game_state == GameState.Inactive:
+            return
         if self.cur_level_index == self.level_set.levels_n - 1:
             return
         self.cur_level_index += 1
         new_level = self.get_cur_level()
         assert new_level != None
         self.restart_level()
-
 
     def reload_tileset(self):
         self.tileset = get_tileset(self.ruleset)
@@ -298,9 +296,15 @@ class LevelPlayer(QWidget):
         # TODO: CCX Intermissions
         self.cur_level_index = 0
         self.reload_tileset()
+        self.set_game_state(GameState.Preplay)
         self.restart_level()
 
+    def close_page(self):
+        self.set_game_state(GameState.Inactive)
+
     def restart_level(self):
+        if self.game_state == GameState.Inactive:
+            return
         self.set_game_state(GameState.Preplay)
         level_meta = self.get_cur_level()
         if not level_meta:
@@ -321,7 +325,6 @@ class LevelPlayer(QWidget):
         self.game_state = state
         self.renderer_w.repaint()
         self.update_game_text()
-
 
     def toggle_paused(self):
         if self.game_state == GameState.Playing:
@@ -388,14 +391,10 @@ class LevelPlayer(QWidget):
         self.update_game_text()
         if self.level.win_state == TriRes.Success:
             QMessageBox.information(self, "You won!", "ayy!")
+            self.next_level()
         elif self.level.win_state == TriRes.Died:
             QMessageBox.warning(self, "You died", "bummer")
-
-    def toggle_ruleset(self):
-        self.ruleset = lynx_logic if self.ruleset == ms_logic else ms_logic
-        self.renderer_w.clickable = self.ruleset == ms_logic
-        self.reload_tileset()
-        self.restart_level()
+            self.restart_level()
 
     def open_debug_tools(self):
         dialog = DebugWindow(self)

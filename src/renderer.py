@@ -5,6 +5,7 @@ from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, QSize, QSizeF, Signal
 from PySide6.QtGui import QCursor, QMouseEvent, QPaintEvent, QPainter, Qt
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
+
 from libchips import Actor, AnyTileID, Direction, GameInput, Level, Position, TileID
 from tileset import RenderPosition, Tileset
 
@@ -49,8 +50,10 @@ class LevelRenderer(QWidget):
 
     def get_repaint(self):
         # HACK: Apparently calling `winId` on a widget causes it to suddenly know its QWindow, which it otherwise might not provide?
-        self.winId()
-        window = self.windowHandle()
+        # HACK: Need to use the root widget (QMainWindow) to get the update function because otherwise other parts of the UI stop painting properly??
+        root_widget = self.window()
+        root_widget.winId()
+        window = root_widget.windowHandle()
         if not window:
             return None
         return window.requestUpdate
@@ -165,7 +168,10 @@ class LevelRenderer(QWidget):
                 self.draw_terrain(pos, top_terrain)
         # Draw actors
         for actor in self.level.actors:
-            if actor.hidden or self.level.status_flags & Level.StatusFlags.DontAnimateActors :
+            if (
+                actor.hidden
+                or self.level.status_flags & Level.StatusFlags.DontAnimateActors
+            ):
                 continue
             self.draw_actor(actor)
         self.painter.end()

@@ -59,10 +59,10 @@ ms_tileset_idx_to_tileid_list = [
     TileID.Door_Red,
     TileID.Door_Green,
     TileID.Door_Yellow,
-    TileID.IceWall_Northwest,
-    TileID.IceWall_Northeast,
     TileID.IceWall_Southeast,
     TileID.IceWall_Southwest,
+    TileID.IceWall_Northwest,
+    TileID.IceWall_Northeast,
     TileID.BlueWall_Fake,
     TileID.BlueWall_Real,
     # Row 2
@@ -193,7 +193,7 @@ class TwMsTileset(Tileset):
         og_point = ms_tileset_tileid_to_pos[actor.full_id]
         return (
             RenderPosition.Normal,
-            QPoint(og_point.x() * self.tile_size, og_point.y() * self.tile_size)
+            QPoint(og_point.x() * self.tile_size, og_point.y() * self.tile_size),
         )
 
 

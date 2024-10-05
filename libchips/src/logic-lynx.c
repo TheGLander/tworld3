@@ -378,6 +378,8 @@ static Direction TileID_get_exit_impeding_directions(TileID self) {
       return DIRECTION_EAST;
     case Wall_Southeast:
       return DIRECTION_SOUTH | DIRECTION_EAST;
+    // NOTE: Haha gotcha: contrary to what one might assume IceWall_ direction means the directions that *don't* have walls.
+    // So, IceWall_Northwest actually has walls on the south and east edges of its tile. Great!
     case IceWall_Northwest:
       return DIRECTION_SOUTH | DIRECTION_EAST;
     case IceWall_Northeast:
@@ -438,14 +440,14 @@ static bool TileID_impedes_actor(TileID self,
     case Fire:
       return actor->id != Chip && actor->id != Block && actor->id != Fireball;
     case IceWall_Northwest:
-      return dir & (DIRECTION_SOUTH | DIRECTION_EAST);
-    case IceWall_Northeast:
-      return dir & (DIRECTION_SOUTH | DIRECTION_WEST);
-    case IceWall_Southwest:
-      return dir & (DIRECTION_NORTH | DIRECTION_EAST);
-    case IceWall_Southeast:
     case Wall_Southeast:
       return dir & (DIRECTION_NORTH | DIRECTION_WEST);
+    case IceWall_Northeast:
+      return dir & (DIRECTION_NORTH | DIRECTION_EAST);
+    case IceWall_Southwest:
+      return dir & (DIRECTION_SOUTH | DIRECTION_WEST);
+    case IceWall_Southeast:
+      return dir & (DIRECTION_SOUTH | DIRECTION_EAST);
     case Wall_North:
       return dir == DIRECTION_SOUTH;
     case Wall_East:

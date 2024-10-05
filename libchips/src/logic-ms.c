@@ -831,16 +831,16 @@ static bool TileID_impedes_move_into(TileID self,
     case Block_Static:
       return actor->id != Chip;
 
+    case Wall_Southeast:
     case IceWall_Northwest:  // dir != instead of just dir == because rarely a
                              // NIL can get passed here as a result of tank top
-      return dir != DIRECTION_NORTH && dir != DIRECTION_WEST;
-    case IceWall_Northeast:
-      return dir != DIRECTION_NORTH && dir != DIRECTION_EAST;
-    case IceWall_Southwest:
-      return dir != DIRECTION_SOUTH && dir != DIRECTION_WEST;
-    case IceWall_Southeast:
-    case Wall_Southeast:
       return dir != DIRECTION_SOUTH && dir != DIRECTION_EAST;
+    case IceWall_Northeast:
+      return dir != DIRECTION_SOUTH && dir != DIRECTION_WEST;
+    case IceWall_Southwest:
+      return dir != DIRECTION_NORTH && dir != DIRECTION_EAST;
+    case IceWall_Southeast:
+      return dir != DIRECTION_NORTH && dir != DIRECTION_WEST;
     case Wall_North:
       return dir != DIRECTION_NORTH && dir != DIRECTION_EAST &&
              dir != DIRECTION_WEST;

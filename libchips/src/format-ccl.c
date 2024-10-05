@@ -52,7 +52,7 @@ static TileID const dat_tileid_map[] = {
     // 0x10
     north(Block), west(Block), south(Block), east(Block), Slide_North,
     Slide_East, Slide_West, Exit, Door_Blue, Door_Red, Door_Green, Door_Yellow,
-    IceWall_Northwest, IceWall_Northeast, IceWall_Southeast, IceWall_Southwest,
+    IceWall_Southeast, IceWall_Southwest, IceWall_Northwest, IceWall_Northeast,
     BlueWall_Fake, BlueWall_Real,
     // 0x20
     1, Burglar, Socket, Button_Green, Button_Red, SwitchWall_Closed,

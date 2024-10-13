@@ -451,7 +451,7 @@ static bool TileID_impedes_actor(TileID self,
     case Wall_North:
       return dir == DIRECTION_SOUTH;
     case Wall_East:
-      return dir == DIRECTION_EAST;
+      return dir == DIRECTION_WEST;
     case Wall_South:
       return dir == DIRECTION_NORTH;
     case Wall_West:

@@ -846,7 +846,7 @@ static bool TileID_impedes_move_into(TileID self,
              dir != DIRECTION_WEST;
     case Wall_East:
       return dir != DIRECTION_NORTH && dir != DIRECTION_SOUTH &&
-             dir != DIRECTION_WEST;
+             dir != DIRECTION_EAST;
     case Wall_South:
       return dir != DIRECTION_SOUTH && dir != DIRECTION_EAST &&
              dir != DIRECTION_WEST;

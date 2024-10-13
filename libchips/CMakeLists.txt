@@ -11,9 +11,12 @@ list(APPEND libchips_src
   src/random.c
   src/misc.c
   src/format-ccl.c
+  src/format-tws.c
 )
 
 # add_executable(libchips-cli ${libchips_src} src/main-cli.c)
 
 add_library(chips SHARED ${libchips_src})
 
+#for tests
+add_subdirectory(test)

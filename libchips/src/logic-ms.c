@@ -464,19 +464,18 @@ static void Level_toggle_walls(Level* level) {
 
 static Actor* Level_create_actor(Level* level) {
   if (level->ms_state.actor_count == MAX_CREATURES) {
-    warn("%d: filled the actor array (note: this should NOT be possible)",
-         level->current_tick);
+    warn("%d: filled the actor array (note: this should NOT be possible)", level->current_tick);
     return NULL;
   }
   Actor* actor = &level->actors[level->ms_state.actor_count];
-  *actor = (Actor){.id = Nothing,
-                   .pos = POSITION_NULL,
+  *actor = (Actor){.pos = POSITION_NULL,
+                   .id = Nothing,
                    .direction = DIRECTION_NIL,
-                   .move_decision = DIRECTION_NIL,
-                   .state = 0,
+                   .move_cooldown = 0,
                    .animation_frame = 0,
                    .hidden = false,
-                   .move_cooldown = 0};
+                   .state = 0,
+                   .move_decision = DIRECTION_NIL,};
 
   level->ms_state.actor_count++;
   return actor;
@@ -555,10 +554,11 @@ static void Actor_update_floor(Actor* self, Level* level) {
     }
   }
 
+  Direction dir = self->direction;
   if (self->state & CS_TURNING)
-    self->direction = Direction_right(self->direction);
+    dir = Direction_right(self->direction);
 
-  MapTile_set_floor(tile, TileID_actor_with_dir(id, self->direction));
+  MapTile_set_floor(tile, TileID_actor_with_dir(id, dir));
   MapTile_clear_state(tile);
 }
 
@@ -580,6 +580,9 @@ static Actor* Level_awaken_creature(Level* self, Position pos) {
   if (!TileID_is_actor(tileid) || TileID_actor_get_id(tileid) == Chip)
     return NULL;
   Actor* new = Level_create_actor(self);
+  if (!new) {
+    return NULL;
+  }
   new->id = TileID_actor_get_id(tileid);
   new->direction = TileID_actor_get_dir(tileid);
   new->pos = pos;
@@ -1338,14 +1341,12 @@ static void Level_activate_cloner(Level* self, Position button_pos) {
   TileID tileid = Level_cell_get_top_floor(self, pos);
   if (!TileID_is_actor(tileid) || TileID_actor_get_id(tileid) == Chip)
     return;
-  if (TileID_actor_get_dir(tileid) == Block) {
+  if (TileID_actor_get_id(tileid) == Block) {
     actor = Level_look_up_block(self, pos);
     if (actor->direction != DIRECTION_NIL)
       Actor_advance_movement(actor, self, actor->direction);
   } else {
-    if (MapTile_get_state(
-            MapCell_get_bottom_tile(Level_get_map_cell(self, pos))) &
-        FS_CLONING)
+    if (MapTile_get_state(MapCell_get_bottom_tile(Level_get_map_cell(self, pos))) & FS_CLONING)
       return;
     memset(&dummy, 0, sizeof(dummy));
     dummy.id = TileID_actor_get_id(tileid);
@@ -1358,8 +1359,7 @@ static void Level_activate_cloner(Level* self, Position button_pos) {
       return;
     actor->state |= CS_CLONING;
     if (Level_cell_get_bottom_floor(self, pos) == CloneMachine)
-      MapTile_add_cloning_state(
-          MapCell_get_bottom_tile(Level_get_map_cell(self, pos)));
+      MapTile_add_cloning_state(MapCell_get_bottom_tile(Level_get_map_cell(self, pos)));
   }
 }
 
@@ -1717,7 +1717,7 @@ static void Actor_end_movement(Actor* self, Level* level, Direction dir) {
     blockcloning = true; /* Squish patch */
 
   if (MapCell_get_bottom_floor(old_cell) == CloneMachine)
-    MapTile_add_cloning_state(MapCell_get_bottom_tile(old_cell));
+    MapTile_remove_cloning_state(MapCell_get_bottom_tile(old_cell));
 
   if (floor == Beartrap) {
     if (Level_is_trap_open(level, newpos, oldpos))
@@ -1971,7 +1971,6 @@ static bool ms_init_level(Level* self) {
   chip->pos = 0;
   chip->id = Chip;
   chip->direction = DIRECTION_SOUTH;
-  Actor_add_to_map(chip, self);
   for (uint32_t n = 0; n < self->ms_state.init_actors_n; ++n) {
     pos = self->ms_state.init_actor_list[n];
     if (pos < 0 || pos >= MAP_WIDTH * MAP_HEIGHT) {

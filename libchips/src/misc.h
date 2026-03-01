@@ -50,4 +50,6 @@ void fprintfnl(FILE* stream, char const* fmt, ...) attr_printf(2, 3);
 #define warn(...)
 #endif
 
+#define eprintf(...) fprintf(stderr, __VA_ARGS__)
+
 #endif  // MISC_H

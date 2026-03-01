@@ -78,13 +78,6 @@ static TileID const dat_tileid_map[] = {
     Boots_Ice, Boots_Slide, north(Chip), west(Chip), south(Chip), east(Chip)
 };
 
-static uint16_t read_uint16_le(uint8_t const* data) {
-  return data[0] + (data[1] << 8);
-}
-static uint32_t read_uint32_le(uint8_t const* data) {
-  return data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24);
-}
-
 enum CllChunkTypes {
   CCL_CHUNK_REDUNDANT_TIME = 1,
   CCL_CHUNK_REDUNDANT_CHIPS = 2,
@@ -105,13 +98,15 @@ Result_LevelSetPtr parse_ccl(uint8_t const* data, size_t data_len) {
     LevelSet_free(set);                                            \
     return res_err(LevelSetPtr, "CCL file ends too soon");         \
   }
+  if (data == NULL)
+    return res_err(LevelSetPtr, "CCL data pointer is null");
 
   LevelSet* set = NULL;
 
   assert_data_avail(4);
   uint32_t magic_bytes = read_uint32_le(data);
   data += 4;
-  if (magic_bytes != 0x0002AAAC)
+  if (magic_bytes != 0x0002AAAC && magic_bytes != 0x0102AAAC)
     return res_err(LevelSetPtr,
                    "Invalid CCL signature. Are you sure this is a CCL file?");
   assert_data_avail(2);

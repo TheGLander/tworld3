@@ -93,14 +93,21 @@ namespace {
       }
       EXPECT_GE(input_list.count, TWSMetadata_get_length(solution));
       if (input_list.count >= TWSMetadata_get_length(solution)) {
-        for (size_t j = 0; j < TWSMetadata_get_length(solution); j += 1) {
+        for (size_t j = 0; j < input_list.count; j += 1) {
           Level_set_game_input(level, GameInputList_get_input(&input_list, j));
           Level_tick(level);
         }
         if (Level_get_win_state(level) != TRIRES_SUCCESS) {
-          print_moves(TWSMetadata_get_level_num(solution), &input_list, TWSMetadata_get_length(solution));
+          if (Level_get_ruleset(level)->id == Ruleset_MS) { //you can thank MS for slides into the exit being weird
+            Level_set_game_input(level, GameInputList_get_input(&input_list, DIRECTION_NIL));
+            Level_tick(level);
+          }
+          if (Level_get_win_state(level) != TRIRES_SUCCESS) {
+            print_moves(TWSMetadata_get_level_num(solution), &input_list, TWSMetadata_get_length(solution));
+          }
         }
         EXPECT_EQ(Level_get_win_state(level), TRIRES_SUCCESS);
+        EXPECT_EQ(Level_get_current_tick(level) + Level_get_time_offset(level), TWSMetadata_get_length(solution));
       }
       GameInputList_free(&input_list);
       Level_free(level);
@@ -109,35 +116,35 @@ namespace {
     return std::nullopt;
   }
 
-  TEST(CCLP1TWS, LoadAndPlayMS) {
+  TEST(MSCCLP, LoadAndPlayCCLP1) {
     loadsets(CCLP1_ccl, sizeof(CCLP1_ccl), public_CCLP1_tws, sizeof(public_CCLP1_tws)).and_then(testset);
   }
 
-  TEST(CCLP1TWS, LoadAndPlayLynx) {
+  TEST(LynxCCLP, LoadAndPlayCCLP1) {
     loadsets(CCLP1_ccl, sizeof(CCLP1_ccl), public_CCLP1_lynx_tws, sizeof(public_CCLP1_lynx_tws)).and_then(testset);
   }
 
-  TEST(CCLP2TWS, LoadAndPlayMS) {
+  TEST(MSCCLP, LoadAndPlayCCLP2) {
     loadsets(CCLP2_ccl, sizeof(CCLP2_ccl), public_CCLP2_tws, sizeof(public_CCLP2_tws)).and_then(testset);
   }
 
-  TEST(CCLP2TWS, LoadAndPlayLynx) {
+  TEST(LynxCCLP, LoadAndPlayCCLXP2) {
     loadsets(CCLXP2_ccl, sizeof(CCLXP2_ccl), public_CCLXP2_tws, sizeof(public_CCLXP2_tws)).and_then(testset);
   }
 
-  TEST(CCLP3TWS, LoadAndPlayMS) {
+  TEST(MSCCLP, LoadAndPlayCCLP3) {
     loadsets(CCLP3_ccl, sizeof(CCLP3_ccl), public_CCLP3_tws, sizeof(public_CCLP3_tws)).and_then(testset);
   }
 
-  TEST(CCLP3TWS, LoadAndPlayLynx) {
+  TEST(LynxCCLP, LoadAndPlayCCLP3) {
     loadsets(CCLP3_ccl, sizeof(CCLP3_ccl), public_CCLP3_lynx_tws, sizeof(public_CCLP3_lynx_tws)).and_then(testset);
   }
 
-  TEST(CCLP4TWS, LoadAndPlayMS) {
+  TEST(MSCCLP, LoadAndPlayCCLP4) {
     loadsets(CCLP4_ccl, sizeof(CCLP4_ccl), public_CCLP4_tws, sizeof(public_CCLP4_tws)).and_then(testset);
   }
 
-  TEST(CCLP4TWS, LoadAndPlayLynx) {
+  TEST(LynxCCLP, LoadAndPlayCCLP4) {
     loadsets(CCLP4_ccl, sizeof(CCLP4_ccl), public_CCLP4_lynx_tws, sizeof(public_CCLP4_lynx_tws)).and_then(testset);
   }
 

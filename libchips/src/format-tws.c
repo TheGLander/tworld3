@@ -100,7 +100,7 @@ Result_GameInputList TWSMetadata_prepare_inputs(TWSMetadata const* self) {
           data += num_bytes;
           size -= num_bytes;
           num_bytes += 1;
-          input = bytes[1] & 0b00111111 | bytes[0] >> 5;
+          input = ((bytes[1] & 0b00111111) << 3) | bytes[0] >> 5;
           time = (bytes[4] & 0b00011111) << 18 | bytes[3] << 10 | bytes[2] << 2 | bytes[1] >> 6;
         }
       }
@@ -276,7 +276,7 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
         data += 1;
         uint8_t slide_step = *data;
         level.rff_dir = slide_step & 0b111;
-        level.init_step_parity = (slide_step >> 3) & 0b11;
+        level.init_step_parity = (slide_step >> 3) & 0b111;
         data += 1;
         level.prng_seed = read_uint32_le(data);
         data += 4;

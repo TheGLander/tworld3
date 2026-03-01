@@ -22,8 +22,8 @@ typedef struct TWSMetadata {
   uint16_t level_num;
   char password[4];
   uint8_t other_flags;
-  Direction slide_direction;
-  int8_t step_value;
+  Direction rff_dir;
+  int8_t init_step_parity;
   uint32_t prng_seed;
   uint32_t num_ticks;
   CompressedInputList compressed_inputs;

@@ -18,11 +18,11 @@ uint8_t TWSMetadata_get_flags(TWSMetadata const* self) {
 }
 
 Direction TWSMetadata_get_slide_dir(TWSMetadata const* self) {
-  return self->slide_direction;
+  return self->rff_dir;
 }
 
 int8_t TWSMetadata_get_step(TWSMetadata const* self) {
-  return self->step_value;
+  return self->init_step_parity;
 }
 
 uint32_t TWSMetadata_get_prng_seed(TWSMetadata const* self) {
@@ -275,8 +275,8 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
         level.other_flags = *data;
         data += 1;
         uint8_t slide_step = *data;
-        level.slide_direction = slide_step & 0b111;
-        level.step_value = (slide_step >> 3) & 0b11;
+        level.rff_dir = slide_step & 0b111;
+        level.init_step_parity = (slide_step >> 3) & 0b11;
         data += 1;
         level.prng_seed = read_uint32_le(data);
         data += 4;

@@ -129,19 +129,19 @@ uint32_t Level_get_sfx(Level const* self) {
 }
 Prng* Level_get_prng_ptr(Level* self) {
   return &self->prng;
-};
+}
 TileID Level_get_top_terrain(Level const* self, Position pos) {
   return self->map[pos].top.id;
-};
+}
 TileID Level_get_bottom_terrain(Level const* self, Position pos) {
   return self->map[pos].bottom.id;
-};
+}
 Actor* Level_get_actors_ptr(Level const* self) {
   return self->actors;
-};
+}
 Actor* Level_get_actor_by_idx(Level const* self, uint32_t idx) {
   return &self->actors[idx];
-};
+}
 uint8_t* Level_player_item_ptr(Level* level, TileID id) {
   switch (id) {
     case Key_Red:
@@ -205,9 +205,28 @@ void Level_set_game_input(Level* self, GameInput game_input) {
 
 TriRes Level_get_win_state(Level const* self) {
   return self->win_state;
-};
+}
+
+Direction Level_get_rff_dir(Level const* self) {
+  return self->rff_dir;
+}
+
+void Level_set_rff_dir(Level* self, Direction dir) {
+  self->rff_dir = dir;
+}
+
+int8_t Level_get_init_step_parity(Level const* self) {
+  return self->init_step_parity;
+}
+
+void Level_set_init_step_parity(Level* self, int8_t parity) {
+  self->init_step_parity = parity;
+}
 
 LevelMetadata const* Level_get_metadata(Level const* self) {
   return self->metadata;
-};
+}
 
+void Level_set_prng(Level* self, Prng other) {
+  self->prng = other;
+}

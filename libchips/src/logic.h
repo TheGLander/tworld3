@@ -331,7 +331,12 @@ bool Level_player_has_item(Level const* self, TileID id);
 void Level_set_game_input(Level* self, GameInput game_input);
 GameInput Level_get_game_input(Level const* self);
 TriRes Level_get_win_state(Level const* self);
+Direction Level_get_rff_dir(Level const* self);
+void Level_set_rff_dir(Level* self, Direction dir);
+int8_t Level_get_init_step_parity(Level const* self);
+void Level_set_init_step_parity(Level* self, int8_t parity);
 LevelMetadata const* Level_get_metadata(Level const* self);
+void Level_set_prng(Level* self, Prng other);
 
 
 typedef enum Sfx {

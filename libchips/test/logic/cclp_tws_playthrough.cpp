@@ -81,6 +81,10 @@ namespace {
       Level* level = level_res.value;
 
       TWSMetadata const* solution = TWSSet_get_level_solution(pair.tws, i + 1);
+      Level_set_init_step_parity(level, solution->init_step_parity);
+      Level_set_rff_dir(level, solution->rff_dir);
+      Prng_init_seeded(Level_get_prng_ptr(level), solution->prng_seed);
+
       Result_GameInputList res = TWSMetadata_prepare_inputs(solution);
       EXPECT_TRUE(res.success);
       GameInputList input_list = res.value;

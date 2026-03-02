@@ -95,30 +95,34 @@ typedef enum TileID {
   Floor_Reserved2 = 0x3E,
   Floor_Reserved1 = 0x3F,
 
-  Chip = 0x40,
+  Floor_Final = 0x7F,
 
-  Block = 0x44,
+  Chip = 0x80,
 
-  Tank = 0x48,
-  Ball = 0x4C,
-  Glider = 0x50,
-  Fireball = 0x54,
-  Walker = 0x58,
-  Blob = 0x5C,
-  Teeth = 0x60,
-  Bug = 0x64,
-  Paramecium = 0x68,
+  Block = 0x84,
 
-  Swimming_Chip = 0x6C,
-  Pushing_Chip = 0x70,
+  Tank = 0x88,
+  Ball = 0x8C,
+  Glider = 0x90,
+  Fireball = 0x94,
+  Walker = 0x98,
+  Blob = 0x9C,
+  Teeth = 0xA0,
+  Bug = 0xA4,
+  Paramecium = 0xA8,
 
-  Entity_Reserved2 = 0x74,
-  Entity_Reserved1 = 0x78,
+  Swimming_Chip = 0xAC,
+  Pushing_Chip = 0xB0,
 
-  Water_Splash = 0x7C,
-  Bomb_Explosion = 0x7D,
-  Entity_Explosion = 0x7E,
-  Animation_Reserved1 = 0x7F
+  Entity_Reserved2 = 0xB4,
+  Entity_Reserved1 = 0xB8,
+
+  Entity_Last = 0xF8,
+
+  Water_Splash = 0xFC,
+  Bomb_Explosion = 0xFD,
+  Entity_Explosion = 0xFE,
+  Animation_Reserved1 = 0xFF
 } TileID;
 
 bool TileID_is_slide(TileID id);

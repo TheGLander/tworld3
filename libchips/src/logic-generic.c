@@ -20,7 +20,7 @@ bool TileID_is_ms_special(TileID id) {
   return id >= Drowned_Chip && id <= Overlay_Buffer;
 }
 bool TileID_is_terrain(TileID id) {
-  return id <= Floor_Reserved1;
+  return id <= Floor_Final;
 }
 bool TileID_is_actor(TileID id) {
   return id >= Chip && id < Water_Splash;

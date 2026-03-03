@@ -168,29 +168,31 @@ class TileID(Enum):
     Overlay_Buffer = 0x3D
     Floor_Reserved2 = 0x3E
     Floor_Reserved1 = 0x3F
+    Floor_Final = 0x7F
 
-    Chip = 0x40
-    Block = 0x44
-    Tank = 0x48
-    Ball = 0x4C
-    Glider = 0x50
-    Fireball = 0x54
-    Walker = 0x58
-    Blob = 0x5C
-    Teeth = 0x60
-    Bug = 0x64
-    Paramecium = 0x68
-    Swimming_Chip = 0x6C
-    Pushing_Chip = 0x70
-    Entity_Reserved2 = 0x74
-    Entity_Reserved1 = 0x78
-    Water_Splash = 0x7C
-    Bomb_Explosion = 0x7D
-    Entity_Explosion = 0x7E
-    Animation_Reserved1 = 0x7F
+    Chip = 0x80
+    Block = 0x84
+    Tank = 0x88
+    Ball = 0x8C
+    Glider = 0x90
+    Fireball = 0x94
+    Walker = 0x98
+    Blob = 0x9C
+    Teeth = 0xA0
+    Bug = 0xA4
+    Paramecium = 0xA8
+    Swimming_Chip = 0xAC
+    Pushing_Chip = 0xB0
+    Entity_Reserved2 = 0xB4
+    Entity_Reserved1 = 0xB8
+    Entity_Last = 0xF8
+    Water_Splash = 0xFC
+    Bomb_Explosion = 0xFD
+    Entity_Explosion = 0xFE
+    Animation_Reserved1 = 0xFF
 
     def is_actor(self):
-        return TileID.Animation_Reserved1.value >= self.value >= TileID.Chip.value
+        return TileID.Water_Splash.value > self.value >= TileID.Chip.value
 
     def is_animation(self):
         return (

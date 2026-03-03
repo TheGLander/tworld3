@@ -66,9 +66,6 @@ namespace {
 
   void testset(LevelsetTwssetPair pair) {
     EXPECT_EQ(LevelSet_get_levels_n(pair.set), TWSSet_get_solutions_n(pair.tws));
-    if (pair.set->levels_n != pair.tws->solutions_n) {
-      return;
-    }
 
     for (size_t i = 0; i < pair.set->levels_n; i += 1) {
       Result_LevelPtr level_res;
@@ -118,7 +115,7 @@ namespace {
 
   void load_test_set(uint8_t const* levelset, size_t levelset_size, uint8_t const* tws, size_t tws_size) {
     LevelsetTwssetPairOptional pair = loadsets(levelset, levelset_size, tws, tws_size);
-    if (!pair.has_value()) return;
+    EXPECT_TRUE(pair.has_value());
     testset(pair.value());
   }
 

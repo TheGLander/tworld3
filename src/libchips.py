@@ -168,7 +168,7 @@ class TileID(Enum):
     Overlay_Buffer = 0x3D
     Floor_Reserved2 = 0x3E
     Floor_Reserved1 = 0x3F
-    Floor_Final = 0x7F,
+    Floor_Final = 0x7F
 
     Chip = 0x80
     Block = 0x84

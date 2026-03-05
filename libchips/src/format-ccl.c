@@ -33,7 +33,7 @@ char const* LevelMetadata_get_author(LevelMetadata const* self) {
 };
 
 void LevelSet_set_name(LevelSet* self, char const* set_name) {
-  self->name = set_name != NULL ? strdup(set_name) : NULL;
+  self->name = (set_name != NULL) ? strdup(set_name) : NULL;
 };
 char const* LevelSet_get_name(LevelSet const* self) {
   return self->name;
@@ -42,6 +42,9 @@ uint16_t LevelSet_get_levels_n(LevelSet const* self) {
   return self->levels_n;
 };
 LevelMetadata* LevelSet_get_level(LevelSet* self, uint16_t idx) {
+  if (idx >= self->levels_n) {
+    return NULL;
+  }
   return &self->levels[idx];
 };
 

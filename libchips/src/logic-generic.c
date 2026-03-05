@@ -142,6 +142,9 @@ Actor* Level_get_actors_ptr(Level const* self) {
 Actor* Level_get_actor_by_idx(Level const* self, uint32_t idx) {
   return &self->actors[idx];
 }
+Actor* Level_get_chip_actor(Level const* self) {
+  return &self->actors[0]; // both MS and Lynx have Chip as the first actor so this is safe
+}
 uint8_t* Level_player_item_ptr(Level* level, TileID id) {
   switch (id) {
     case Key_Red:

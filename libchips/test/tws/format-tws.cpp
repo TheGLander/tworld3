@@ -430,27 +430,28 @@ namespace {
     EXPECT_EQ(TWSSet_get_solutions_n(set), 2);
     EXPECT_EQ(set->solutions_allocated, 2);
 
+    TWSMetadata* solution = TWSSet_get_solution_by_level_num(set, 1);
+    EXPECT_EQ(solution, &set->solutions[0]);
+    EXPECT_EQ(TWSMetadata_get_level_num(solution), 1);
+    EXPECT_EQ(TWSMetadata_get_prng_seed(solution), 342566057);
+    EXPECT_EQ(TWSMetadata_get_length(solution), 398);
+    EXPECT_EQ(TWSMetadata_get_flags(solution), 0);
+    EXPECT_EQ(TWSMetadata_get_step(solution), 0);
+    EXPECT_EQ(TWSMetadata_get_slide_dir(solution), 0);
 
-    EXPECT_EQ(TWSSet_get_solution_by_level_num(set, 1), &set->solutions[0]);
-    EXPECT_EQ(TWSMetadata_get_level_num(TWSSet_get_solution_by_level_num(set, 1)), 1);
-    EXPECT_EQ(TWSMetadata_get_prng_seed(TWSSet_get_solution_by_level_num(set, 1)), 342566057);
-    EXPECT_EQ(TWSMetadata_get_length(TWSSet_get_solution_by_level_num(set, 1)), 398);
-    EXPECT_EQ(TWSMetadata_get_flags(TWSSet_get_solution_by_level_num(set, 1)), 0);
-    EXPECT_EQ(TWSMetadata_get_step(TWSSet_get_solution_by_level_num(set, 1)), 0);
-    EXPECT_EQ(TWSMetadata_get_slide_dir(TWSSet_get_solution_by_level_num(set, 1)), 0);
-
-    EXPECT_EQ(TWSSet_get_solution_by_level_num(set, 2), &set->solutions[1]);
-    EXPECT_EQ(TWSMetadata_get_level_num(TWSSet_get_solution_by_level_num(set, 2)), 2);
-    EXPECT_EQ(TWSMetadata_get_length(TWSSet_get_solution_by_level_num(set, 2)), 0);
-    Result_GameInputList res = TWSMetadata_prepare_inputs(TWSSet_get_solution_by_level_num(set, 2));
+    TWSMetadata* solution2 = TWSSet_get_solution_by_level_num(set, 2);
+    EXPECT_EQ(solution2, &set->solutions[1]);
+    EXPECT_EQ(TWSMetadata_get_level_num(solution2), 2);
+    EXPECT_EQ(TWSMetadata_get_length(solution2), 0);
+    Result_GameInputList res = TWSMetadata_prepare_inputs(solution2);
     ASSERT_FALSE(res.success);
     free(res.error);
 
-    res = TWSMetadata_prepare_inputs(TWSSet_get_solution_by_level_num(set, 1));
+    res = TWSMetadata_prepare_inputs(solution);
     ASSERT_TRUE(res.success);
     GameInputList input_list = res.value;
     EXPECT_EQ(input_list.count, std::size(example_inputs));
-    for (size_t i = 0; i < TWSMetadata_get_length(TWSSet_get_solution_by_level_num(set, 1)); i += 1) {
+    for (size_t i = 0; i < TWSMetadata_get_length(solution); i += 1) {
       GameInput input = GameInputList_get_input(&input_list, i);
       GameInput example_input = example_inputs[i];
       // printf("%d : %d\n", input, example_input);

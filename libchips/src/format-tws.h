@@ -54,8 +54,9 @@ uint16_t TWSSet_get_recent_level(TWSSet const* self);
 uint32_t TWSSet_get_solutions_n(TWSSet const* self);
 TWSMetadata* TWSSet_get_solution_by_level_num(TWSSet* self, uint32_t level_num);
 TWSMetadata* TWSSet_get_solution_by_idx(TWSSet* self, uint32_t idx);
-uint32_t TWSSet_get_level_idx(TWSSet const* self, uint32_t level_num);
+uint32_t TWSSet_get_solution_idx_by_level_num(TWSSet const* self, uint32_t level_num);
 TWSMetadata* TWSSet_get_solution_by_password(TWSSet* self, char const password[4]);
+uint32_t TWSSet_get_solution_idx_by_password(TWSSet const* self, char const password[4]);
 
 typedef TWSSet* TWSSetPtr;
 DEFINE_RESULT(TWSSetPtr);

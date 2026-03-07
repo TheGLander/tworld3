@@ -139,21 +139,45 @@ uint32_t TWSSet_get_solutions_n(TWSSet const* self) {
   return self->solutions_n;
 }
 
-TWSMetadata const* TWSSet_get_level_solution(TWSSet const* self, uint16_t level_num) {
-  for (uint32_t i = 0; i < self->solutions_n; i += 1) {
-    if (self->solutions[i].level_num == level_num) {
-      return &self->solutions[i];
-    }
+TWSMetadata* TWSSet_get_solution_by_level_num(TWSSet* self, uint32_t level_num) {
+  uint32_t idx = TWSSet_get_solution_idx_by_level_num(self, level_num);
+  if (idx == (uint32_t)-1) {
+    return NULL;
   }
-  return NULL;
-}
-
-TWSMetadata const* TWSSet_get_solution_by_idx(TWSSet const* self, uint32_t idx) {
   return &self->solutions[idx];
 }
 
-uint32_t TWSSet_get_level_idx(TWSSet const* self, uint16_t level_num) {
-  return TWSSet_get_level_solution(self, level_num) - self->solutions;
+TWSMetadata* TWSSet_get_solution_by_idx(TWSSet* self, uint32_t idx) {
+  if (idx >= self->solutions_n) {
+    return NULL;
+  }
+  return &self->solutions[idx];
+}
+
+uint32_t TWSSet_get_solution_idx_by_level_num(TWSSet const* self, uint32_t level_num) {
+  for (uint32_t i = 0; i < self->solutions_n; i += 1) {
+    if (self->solutions[i].level_num == level_num) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+TWSMetadata* TWSSet_get_solution_by_password(TWSSet* self, char const password[4]) {
+  uint32_t idx = TWSSet_get_solution_idx_by_password(self, password);
+  if (idx == (uint32_t)-1) {
+    return NULL;
+  }
+  return &self->solutions[idx];
+}
+
+uint32_t TWSSet_get_solution_idx_by_password(TWSSet const* self, char const password[4]) {
+  for (uint32_t i = 0; i < self->solutions_n; i += 1) {
+    if (memcmp(self->solutions[i].password, password, 4) == 0) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 void TWSSet_free(TWSSet* self) {

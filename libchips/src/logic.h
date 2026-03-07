@@ -330,6 +330,7 @@ TileID Level_get_top_terrain(Level const* self, Position pos);
 TileID Level_get_bottom_terrain(Level const* self, Position pos);
 Actor* Level_get_actors_ptr(Level const* self);
 Actor* Level_get_actor_by_idx(Level const* self, uint32_t idx);
+Actor* Level_get_chip_actor(Level const* self);
 uint8_t* Level_player_item_ptr(Level* self, TileID id);
 bool Level_player_has_item(Level const* self, TileID id);
 void Level_set_game_input(Level* self, GameInput game_input);

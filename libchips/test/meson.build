@@ -17,4 +17,4 @@ gtest_libchips_test = executable(
   dependencies: dependencies,
 )
 
-test('gtest test', gtest_libchips_test, protocol: 'gtest', verbose: true)
+test('gtest test', gtest_libchips_test, protocol: 'gtest', verbose: true, args: '--gtest_color=yes')

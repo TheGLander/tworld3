@@ -67,17 +67,14 @@ namespace {
   void testset(LevelsetTwssetPair pair) {
     EXPECT_EQ(LevelSet_get_levels_n(pair.set), TWSSet_get_solutions_n(pair.tws));
 
-    for (size_t i = 0; i < pair.set->levels_n; i += 1) {
-      Result_LevelPtr level_res;
-      if (TWSSet_get_ruleset(pair.tws) == Ruleset_MS) {
-        level_res = LevelMetadata_make_level(&pair.set->levels[i], &ms_logic);
-      } else if (TWSSet_get_ruleset(pair.tws) == Ruleset_Lynx) {
-        level_res = LevelMetadata_make_level(&pair.set->levels[i], &lynx_logic);
-      }
+    Ruleset const* ruleset = TWSSet_get_ruleset(pair.tws) == Ruleset_MS ? &ms_logic : &lynx_logic;
+
+    for (size_t i = 0; i < LevelSet_get_levels_n(pair.set); i += 1) {
+      Result_LevelPtr level_res = LevelMetadata_make_level(LevelSet_get_level(pair.set, i), ruleset);
       EXPECT_TRUE(level_res.success);
       Level* level = level_res.value;
 
-      TWSMetadata const* solution = TWSSet_get_solution_by_level_num(pair.tws, i + 1);
+      TWSMetadata const* solution = TWSSet_get_solution_by_level_num(pair.tws, level->metadata->level_number);
       Level_set_init_step_parity(level, solution->init_step_parity);
       Level_set_rff_dir(level, solution->rff_dir);
       Prng_init_seeded(Level_get_prng_ptr(level), solution->prng_seed);
@@ -85,27 +82,27 @@ namespace {
       Result_GameInputList res = TWSMetadata_prepare_inputs(solution);
       EXPECT_TRUE(res.success);
       GameInputList input_list = res.value;
-      if (input_list.count < TWSMetadata_get_length(solution)) {
-        printf("%d:\n", solution->level_num);
-      }
+
       EXPECT_GE(input_list.count, TWSMetadata_get_length(solution));
-      if (input_list.count >= TWSMetadata_get_length(solution)) {
-        for (size_t j = 0; j < input_list.count; j += 1) {
-          Level_set_game_input(level, GameInputList_get_input(&input_list, j));
-          Level_tick(level);
-        }
-        if (Level_get_win_state(level) != TRIRES_SUCCESS) {
-          if (Level_get_ruleset(level)->id == Ruleset_MS) { //you can thank MS for slides into the exit being weird
-            Level_set_game_input(level, GameInputList_get_input(&input_list, DIRECTION_NIL));
-            Level_tick(level);
-          }
-          if (Level_get_win_state(level) != TRIRES_SUCCESS) {
-            print_moves(TWSMetadata_get_level_num(solution), &input_list, TWSMetadata_get_length(solution));
-          }
-        }
-        EXPECT_EQ(Level_get_win_state(level), TRIRES_SUCCESS);
-        EXPECT_EQ(Level_get_current_tick(level) + Level_get_time_offset(level), TWSMetadata_get_length(solution));
+
+      for (size_t j = 0; j < input_list.count; j += 1) {
+        Level_set_game_input(level, GameInputList_get_input(&input_list, j));
+        Level_tick(level);
       }
+
+      if (Level_get_win_state(level) != TRIRES_SUCCESS && ruleset->id == Ruleset_MS) {
+        //you can thank MS for slides into the exit being weird
+        Level_set_game_input(level, GameInputList_get_input(&input_list, DIRECTION_NIL));
+        Level_tick(level);
+      }
+
+      if (Level_get_win_state(level) != TRIRES_SUCCESS) {
+        print_moves(TWSMetadata_get_level_num(solution), &input_list, TWSMetadata_get_length(solution));
+      }
+
+      EXPECT_EQ(Level_get_win_state(level), TRIRES_SUCCESS);
+      EXPECT_EQ(Level_get_current_tick(level) + Level_get_time_offset(level), TWSMetadata_get_length(solution));
+
       GameInputList_free(&input_list);
       Level_free(level);
     }

@@ -1,4 +1,5 @@
 #include "format-tws.h"
+#include "src/logic.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -33,6 +34,10 @@ uint32_t TWSMetadata_get_length(TWSMetadata const* self) {
   return self->num_ticks;
 }
 
+static GameInput const input_lookup[] = {DIRECTION_NORTH, DIRECTION_WEST, DIRECTION_SOUTH, DIRECTION_EAST,
+    DIRECTION_NORTH | DIRECTION_WEST, DIRECTION_SOUTH | DIRECTION_WEST, DIRECTION_NORTH | DIRECTION_EAST,
+    DIRECTION_SOUTH | DIRECTION_EAST};
+
 Result_GameInputList TWSMetadata_prepare_inputs(TWSMetadata const* self) {
   if (self->compressed_inputs.bytes == NULL) {
     return res_err(GameInputList, "Solution has no inputs");
@@ -41,9 +46,6 @@ Result_GameInputList TWSMetadata_prepare_inputs(TWSMetadata const* self) {
   static_assert(((GameInput) DIRECTION_NIL) == 0);
   GameInputList input_list = GameInputList_new(self->num_ticks);
   uint32_t tick = 0;
-  GameInput const input_lookup[] = {DIRECTION_NORTH, DIRECTION_WEST, DIRECTION_SOUTH, DIRECTION_EAST,
-    DIRECTION_NORTH | DIRECTION_WEST, DIRECTION_SOUTH | DIRECTION_WEST, DIRECTION_NORTH | DIRECTION_EAST,
-    DIRECTION_SOUTH | DIRECTION_EAST};
   size_t size = self->compressed_inputs.count;
   uint8_t const* data = self->compressed_inputs.bytes;
   while (size) {
@@ -299,7 +301,10 @@ Result_TWSSetPtr parse_tws(uint8_t const* data, size_t data_len) {
         level.other_flags = *data;
         data += 1;
         uint8_t slide_step = *data;
-        level.rff_dir = slide_step & 0b111;
+        level.rff_dir = input_lookup[slide_step & 0b111];
+        if (Direction_is_diagonal(level.rff_dir)) {
+          return get_error(set, "RFF direction is not cardinal");
+        }
         level.init_step_parity = (slide_step >> 3) & 0b111;
         data += 1;
         level.prng_seed = read_uint32_le(data);

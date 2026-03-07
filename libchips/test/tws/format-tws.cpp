@@ -2,6 +2,7 @@
 #include <gmock/gmock.h>
 
 #include "data/tws/tws_embeds.h"
+#include "logic.h"
 
 extern "C" {
 #include "format-tws.h"
@@ -437,7 +438,7 @@ namespace {
     EXPECT_EQ(TWSMetadata_get_length(solution), 398);
     EXPECT_EQ(TWSMetadata_get_flags(solution), 0);
     EXPECT_EQ(TWSMetadata_get_step(solution), 0);
-    EXPECT_EQ(TWSMetadata_get_slide_dir(solution), 0);
+    EXPECT_EQ(TWSMetadata_get_slide_dir(solution), DIRECTION_NORTH);
 
     TWSMetadata* solution2 = TWSSet_get_solution_by_level_num(set, 2);
     EXPECT_EQ(solution2, &set->solutions[1]);

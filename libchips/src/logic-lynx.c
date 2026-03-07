@@ -117,9 +117,7 @@ static void Level_stop_terrain_sfx(Level* level) {
 }
 
 static bool lynx_init_level(Level* self) {
-  Actor* actors = xcalloc(MAX_CREATURES + 1, sizeof(Actor));
-  // TODO: Do we actually need to skip the first actor?
-  actors += 1;
+  Actor* actors = xcalloc(MAX_CREATURES, sizeof(Actor));
   self->actors = actors;
   uint16_t actors_n = 0;
   Actor* chip = NULL;
@@ -199,11 +197,6 @@ static bool lynx_init_level(Level* self) {
     chip->hidden = true;
   }
   self->lx_state.last_actor = &actors[actors_n - 1];
-  // TODO: Is this actually needed?
-  Actor* final_actor = &actors[actors_n];
-  final_actor->pos = POSITION_NULL;
-  final_actor->id = Nothing;
-  final_actor->direction = DIRECTION_NIL;
   // Swap Chip to be the first actor
   if (chip) {
     Actor* first_actor = &self->actors[0];
@@ -471,7 +464,7 @@ static Actor* Level_find_actor(Level const* self, Position pos, uint8_t flags) {
   if (flags & FA_NO_CHIP) {
     actors += 1;
   }
-  for (Actor* actor = actors; actor->id != Nothing; actor += 1) {
+  for (Actor* actor = actors; actor <= self->lx_state.last_actor; actor += 1) {
     if (actor->pos == pos && !actor->hidden &&
         ((flags & FA_ANIMS) == TileID_is_animation(actor->id)))
       return actor;
@@ -691,8 +684,9 @@ static Position Level_find_connected_cell(Level const* self,
 static TriRes Actor_advance_movement(Actor* self, Level* level, bool releasing);
 
 static Actor* Actor_new(Level* level) {
-  Actor* actor = level->actors + 1;
-  for (; actor->id != Nothing; actor += 1) {
+  Actor* actor;
+
+  for (actor = level->actors + 1; actor <= level->lx_state.last_actor; actor += 1) {
     if (actor->hidden)
       return actor;
   }
@@ -704,11 +698,8 @@ static Actor* Actor_new(Level* level) {
   }
   if (level->lx_state.pedantic_mode && actors_used >= PEDANTIC_MAX_CREATURES)
     return NULL;
-
   actor->hidden = true;
-  Actor* new_last_actor = actor + 1;
-  actor->id = Nothing;
-  level->lx_state.last_actor = new_last_actor;
+  level->lx_state.last_actor = actor;
   return actor;
 }
 
@@ -745,7 +736,7 @@ static bool Level_activate_cloner(Level* self, Position pos) {
 }
 
 static void Level_turn_tanks(Level* self) {
-  for (Actor* actor = self->actors; actor->id != Nothing; actor += 1) {
+  for (Actor* actor = self->actors; actor <= self->lx_state.last_actor; actor += 1) {
     if (actor->hidden || actor->id != Tank)
       continue;
     TileID terrain = Level_get_terrain(self, actor->pos);
@@ -1313,7 +1304,7 @@ static void lynx_tick_level(Level* self) {
       Level_remove_chip(self, CHIP_OUTOFTIME, NULL);
     }
   }
-  for (Actor* actor = self->actors; actor->id != Nothing; actor += 1) {
+  for (Actor* actor = self->actors; actor <= self->lx_state.last_actor; actor += 1) {
     if (actor->hidden || !(actor->state & CS_REVERSE))
       continue;
     actor->state &= ~CS_REVERSE;
@@ -1321,7 +1312,7 @@ static void lynx_tick_level(Level* self) {
       actor->direction = Direction_back(actor->direction);
     }
   }
-  for (Actor* actor = self->actors; actor->id != Nothing; actor += 1) {
+  for (Actor* actor = self->actors; actor <= self->lx_state.last_actor; actor += 1) {
     if (!(actor->state & CS_PUSHED))
       continue;
     if (actor->hidden || !Actor_is_moving(actor)) {

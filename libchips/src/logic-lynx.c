@@ -216,6 +216,7 @@ static bool lynx_init_level(Level* self) {
                     chip->pos != POSITION_NULL &&
                     TileID_is_ice(Level_get_terrain(self, chip->pos)),
       .chip_predicted_pos = POSITION_NULL,
+      .to_place_wall_pos = POSITION_NULL
   };
 
   return !(self->status_flags & SF_INVALID);
@@ -466,7 +467,7 @@ static Actor* Level_find_actor(Level const* self, Position pos, uint8_t flags) {
   }
   for (Actor* actor = actors; actor <= self->lx_state.last_actor; actor += 1) {
     if (actor->pos == pos && !actor->hidden &&
-        ((flags & FA_ANIMS) == TileID_is_animation(actor->id)))
+        ((bool)(flags & FA_ANIMS) == TileID_is_animation(actor->id)))
       return actor;
   }
   return NULL;
@@ -541,12 +542,12 @@ static bool Actor_check_collision(Actor const* self,
         return false;
     }
   }
-  // These walls turn into real walls, but I guess we have to do this after the
-  // actor check?
-  // TODO: Can we not just put this in `TileID_impedes_actor`?
-  if (self->id == Chip && (flags & CMM_STARTMOVEMENT) &&
-      (new_terrain == HiddenWall_Temp || new_terrain == BlueWall_Real)) {
-    level->map[target_pos].top.id = Wall;
+  // These tiles turn into real walls, but these checks have to happen after the
+  // `TileID` and push checks we want blocks to be able to be pushed off these tiles
+  if (self->id == Chip && (new_terrain == HiddenWall_Temp || new_terrain == BlueWall_Real)) {
+    if (flags & CMM_STARTMOVEMENT) {
+      level->map[target_pos].top.id = Wall;
+    }
     return false;
   }
   return true;

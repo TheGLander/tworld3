@@ -96,6 +96,13 @@ namespace {
         Level_tick(level);
       }
 
+      if (ruleset->id == Ruleset_Lynx) {
+        // Skip through the Lynx endgame timer
+        while (level->lx_state.endgame_timer > 0) {
+          Level_tick(level);
+        }
+      }
+
       if (Level_get_win_state(level) != TRIRES_SUCCESS) {
         print_moves(TWSMetadata_get_level_num(solution), &input_list, TWSMetadata_get_length(solution));
       }

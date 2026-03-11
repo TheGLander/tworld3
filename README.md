@@ -9,15 +9,11 @@ If you're a programmer and want to help out, reach out!
 
 ## libchips
 
-`libchips` is an implementation of the core game logic of the Lynx and Windows
-versions of the game Chip's Challenge. It is based on Tile World, but refactored
-to have clearer and more modern code.
+Tile World 3 is using the [`libchips` library](https://github.com/TheGLander/libchips), which itself was split out from
+the original Tile World project.
 
-Progress:
-
-- Lynx: ✅ finished
-- MS: ✅ finished
-- DAT: ✅ finished
-- TWS: ❌ not started
-- JSON/Routefile: ❌ not started
-- (maybe) NCCS: ❌ not started
+## License
+This program is free software; you can redistribute it and/or modify it
+under the terms of the GNU General Public License as published by the Free
+Software Foundation; either version 2 of the License, or (at your option)
+any later version.
